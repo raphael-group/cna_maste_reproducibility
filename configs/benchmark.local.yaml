@@ -1,0 +1,107 @@
+# Local copies of the benchmark's runs, the schema of benchmark.remote.yaml (the cluster copies).
+# A relative path is under the benchmark's directory (`read_method_input.get_benchmark_path`), an absolute one read
+# as given.
+# A run: `dir` the directory a `read_method_input` reader takes, `labels` its spot clones, `profile` its copy numbers.
+# A run key beyond `numbat`, `clonalscope`, `calicost`, `cnamaste` and `cell_type` names its variant, from its directory's name.
+# `runtime`: a sample's runs' runtime table, `method`, `setting`, `resolution [um]`, `Runtime [mins]`, `Memory [GB]`.
+# `simulation`: the simulations' truth (`groundtruth_dir`, a directory per simulation), runtime table, and each
+# method's run of one simulation, `dir` a template of its `sample_id`.
+vishd:
+  H1-N3KXRGQ:
+    runtime: input_data/real_data/runtime.H1-N3KXRGQ.tsv
+    ugp:
+      dir: input_data/real_data/output_10092026/H1-N3KXRGQ
+      spots: input_data/real_data/output_10092026/H1-N3KXRGQ/bb/MSR300/VISIUM3prime/barcodes.tsv.gz
+      spaceranger_dir: input_data/real_data/output_10092026/H1-N3KXRGQ/bb-032um
+      bb_dir:
+        16: input_data/real_data/output_10092026/H1-N3KXRGQ/bb
+        32: input_data/real_data/output_10092026/H1-N3KXRGQ/bb-032um
+        64: input_data/real_data/output_10092026/H1-N3KXRGQ/bb-064um
+        128: input_data/real_data/output_10092026/H1-N3KXRGQ/bb-128um
+        256: input_data/real_data/output_10092026/H1-N3KXRGQ/bb-256um
+    numbat:
+      dir: input_data/real_data/numbat/H1-N3KXRGQ-numbat-max_entropy_08
+      labels: input_data/real_data/numbat/H1-N3KXRGQ-numbat-max_entropy_08/clone_post_2.tsv
+      profile: input_data/real_data/numbat/H1-N3KXRGQ-numbat-max_entropy_08/bulk_clones_final.tsv.gz
+    calicost:
+      dir: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu20
+      labels: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu20/clone3_rectangle0_w1.0/clone_labels.tsv
+      profile: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu20/clone3_rectangle0_w1.0/cnv_diploid_seglevel.tsv
+    calicost_016um:
+      dir: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu20
+      labels: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu20/clone3_rectangle0_w1.0/clone_labels.tsv
+      profile: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu20/clone3_rectangle0_w1.0/cnv_diploid_seglevel.tsv
+    calicost_016um_msu10:
+      dir: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu10
+      labels: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu10/clone3_rectangle0_w1.0/clone_labels.tsv
+      profile: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu10/clone3_rectangle0_w1.0/cnv_diploid_seglevel.tsv
+    calicost_016um_msu15:
+      dir: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu15
+      labels: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu15/clone3_rectangle0_w1.0/clone_labels.tsv
+      profile: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu15/clone3_rectangle0_w1.0/cnv_seglevel.tsv
+    calicost_016um_msu25:
+      dir: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu25
+      labels: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu25/clone3_rectangle0_w1.0/clone_labels.tsv
+      profile: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu25/clone3_rectangle0_w1.0/cnv_diploid_seglevel.tsv
+    calicost_016um_msu50:
+      dir: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu50
+      labels: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu50/clone3_rectangle0_w1.0/clone_labels.tsv
+      profile: input_data/real_data/calicost/H1-N3KXRGQ_016um_msu50/clone3_rectangle0_w1.0/cnv_seglevel.tsv
+    calicost_032um:
+      dir: input_data/real_data/calicost/H1-N3KXRGQ_032um
+      labels: input_data/real_data/calicost/H1-N3KXRGQ_032um/clone3_rectangle0_w1.0/clone_labels.tsv
+      profile: input_data/real_data/calicost/H1-N3KXRGQ_032um/clone3_rectangle0_w1.0/cnv_seglevel.tsv
+    cnamaste:
+      dir: input_data/real_data/cnamaste/N3KXRGQ-ac88605f/run_ac88605f
+      labels: input_data/real_data/cnamaste/N3KXRGQ-ac88605f/run_ac88605f/clone_labels_int.tsv.gz
+      profile: input_data/real_data/cnamaste/N3KXRGQ-ac88605f/run_ac88605f/cnv_diploid_seglevel.tsv
+    clonalscope:
+      dir: input_data/real_data/clonalscope/H1-N3KXRGQ_032um-visium_tutorial/postprocess
+      labels: input_data/real_data/clonalscope/H1-N3KXRGQ_032um-visium_tutorial/postprocess/H1-N3KXRGQ_032um.scRNA.cells.tsv
+      profile: input_data/real_data/clonalscope/H1-N3KXRGQ_032um-visium_tutorial/postprocess/H1-N3KXRGQ_032um.scRNA.profile.tsv
+    hatchet_msr300:
+      dir: input_data/real_data/hatchet/hatchet-H1-N3KXRGQ-msr300
+      labels: null
+      profile: input_data/real_data/hatchet/hatchet-H1-N3KXRGQ-msr300/results/best.seg.ucn
+    hatchet_msr300_fullpb:
+      dir: input_data/real_data/hatchet/hatchet-H1-N3KXRGQ-msr300-fullpb
+      labels: null
+      profile: input_data/real_data/hatchet/hatchet-H1-N3KXRGQ-msr300-fullpb/results/best.seg.ucn
+    cell_type:
+      labels: input_data/real_data/celltyping/H1-N3KXRGQ/celltyping-16um-all_spots-10x_graphclust_panglaodb_ulm/spot_annotation.tsv
+    cell_type_8um:
+      labels: input_data/real_data/celltyping/H1-N3KXRGQ/celltyping-8um-all_spots-10x_graphclust_panglaodb_ulm/spot_annotation.tsv
+  H1-CWRFYX3:
+    ugp:
+      dir: input_data/real_data/output_10092026/H1-CWRFYX3
+      spots: input_data/real_data/output_10092026/H1-CWRFYX3/bb/MSR300/VISIUM3prime/barcodes.tsv.gz
+      spaceranger_dir: input_data/real_data/output_10092026/H1-CWRFYX3/bb-032um
+      bb_dir:
+        16: input_data/real_data/output_10092026/H1-CWRFYX3/bb
+        32: input_data/real_data/output_10092026/H1-CWRFYX3/bb-032um
+        64: input_data/real_data/output_10092026/H1-CWRFYX3/bb-064um
+        128: input_data/real_data/output_10092026/H1-CWRFYX3/bb-128um
+        256: input_data/real_data/output_10092026/H1-CWRFYX3/bb-256um
+    cell_type:
+      labels: input_data/real_data/celltyping/H1-CWRFYX3/celltyping-16um-all_spots-10x_graphclust_panglaodb_ulm/spot_annotation.tsv
+simulation:
+  groundtruth_dir: input_data/simulation_data/groundtruth
+  runtime: input_data/simulation_data/simulation.runtime.tsv
+  numbat:
+    dir: input_data/simulation_data/numbat/{sample_id}/max_entropy_08/run_numbat
+  clonalscope:
+    dir: input_data/simulation_data/clonalscope/postprocess/visium_tutorial/{sample_id}/scRNA
+  calicost:
+    dir: input_data/simulation_data/method_results/calicost/{sample_id}
+  cnamaste:
+    dir: input_data/simulation_data/nomixing_cnamaste_related/{sample_id}/expansion-lattice-lattice/run_*
+    solver: expansion-lattice-lattice
+  cnamaste-expansion-calicost-calicost:
+    dir: input_data/simulation_data/nomixing_cnamaste_related/{sample_id}/expansion-calicost-calicost/run_*
+    solver: expansion-calicost-calicost
+  cnamaste-opengm_icm-lattice-lattice:
+    dir: input_data/simulation_data/nomixing_cnamaste_related/{sample_id}/opengm_icm-lattice-lattice/run_*
+    solver: opengm_icm-lattice-lattice
+  cnamaste-opengm_icm-calicost-calicost:
+    dir: input_data/simulation_data/nomixing_cnamaste_related/{sample_id}/opengm_icm-calicost-calicost/run_*
+    solver: opengm_icm-calicost-calicost

@@ -1,0 +1,16 @@
+# Numbat env for the benchmark; versions as built at configs/metadata.yaml software.envs.numbat.
+# Allele pileup and phasing come from UGP, so cellsnp-lite / Eagle2 are not needed.
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - snakemake-minimal=9.27.1
+  - python=3.14.8                         # NB: numbat/postprocess.py, stdlib only
+  - r-base=4.4.1
+  - r-numbat=1.5.2
+  - bioconductor-genomeinfodbdata=1.2.13  # NB: needed by GenomeInfoDb at load, not always pulled
+  - r-matrix=1.7_6
+  - r-data.table=1.18.6.1
+  - r-dplyr=1.2.1                         # NB: numbat/build_allele_counts.R
+  - r-stringr=1.6.0
+  - r-glue=1.8.1

@@ -1,0 +1,12 @@
+# Local data and run outputs.
+input_data/
+output/
+tmp/
+.build/
+baselines/logs/
+
+# Caches.
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.DS_Store

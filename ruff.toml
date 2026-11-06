@@ -1,0 +1,12 @@
+# Ruff settings of the cnamaste repository at 42b96ff (its pyproject.toml `[tool.ruff]`), which the benchmark runs on;
+# `cnamaste` is first-party and `scripts` third-party, the import order these modules had inside that repository.
+line-length = 120
+extend-exclude = [".build", "input_data", "output"]
+
+[lint]
+extend-select = ["I"]
+
+[lint.isort]
+combine-as-imports = true
+known-first-party = ["cnamaste"]
+known-third-party = ["calicost", "scripts"]

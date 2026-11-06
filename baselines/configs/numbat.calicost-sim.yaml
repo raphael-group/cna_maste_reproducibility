@@ -1,0 +1,8 @@
+# Numbat (scRNA mode) on the CalicoST simulations; every numcnas* folder under the dataset's sim_dir.
+# Allele counts are each simulation's numbat_allele_counts.tsv.gz from the deposit.
+dataset: calicost-sim
+outdir: /n/fs/ragr-data/datasets/cnamaste-benchmark/benchmark/numbat
+run_label: max_entropy_08
+ncores: 8
+# NB: package default 0.5; 0.8 per https://kharchenkolab.github.io/numbat/articles/spatial-rna.html
+max_entropy: 0.8

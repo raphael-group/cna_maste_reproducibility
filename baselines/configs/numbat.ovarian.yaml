@@ -1,0 +1,11 @@
+# Numbat (scRNA mode) on Visium HD 3prime ovarian H1-N3KXRGQ.
+# bin_um: 32um bins summed from 16um; run_numbat calls stats::hclust on a spot x spot distance, which
+# stops above 65536 items, and the 16um slide exceeds that.
+dataset: ovarian
+samples: [H1-N3KXRGQ]
+bin_um: 32
+outdir: /n/fs/ragr-data/datasets/Visium_HD_3prime/benchmark/numbat
+run_label: max_entropy_08
+ncores: 12
+# NB: package default 0.5; 0.8 per https://kharchenkolab.github.io/numbat/articles/spatial-rna.html
+max_entropy: 0.8

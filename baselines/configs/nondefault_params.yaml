@@ -1,0 +1,95 @@
+# Non-default parameters used by Numbat and Clonalscope in the benchmark, with their source.
+#
+# Runpeng Luo (2026-11-02)
+#
+# Scope: CalicoST simulations and Visium HD 3prime H1-N3KXRGQ (configs/<method>.{ovarian,calicost-sim}.yaml).
+# Each entry: value (used), default (installed package formals), source (tutorial URL + quoted line),
+#   where (script that sets it). "default" values were read with formals() from the installed packages.
+# Arguments not listed run at package defaults. Runtime-only arguments (ncores, threads) are listed
+#   under runtime and do not change results.
+# No script reads this file; the scripts named by `where` set these values.
+
+packages:
+  numbat:
+    version: "1.5.2"
+  clonalscope:
+    version: "1.1.0"
+    commit: 07dd0c576b6754d18dda86ec8905d8a9be5e77b0
+
+sources:
+  numbat_spatial_vignette:
+    url: https://kharchenkolab.github.io/numbat/articles/spatial-rna.html
+    raw: https://github.com/kharchenkolab/numbat/blob/b444f3c51f1ed38f400b2b8bc435cd40fabe6f4e/vignettes/spatial-rna.Rmd
+  numbat_vignette:
+    url: https://kharchenkolab.github.io/numbat/articles/numbat.html
+  clonalscope_visium_tutorial:
+    url: https://github.com/seasoncloud/Clonalscope/blob/26f4f37798f8bc4a84f7dd42ce014a4457a18d86/samples/V11Y04-378-A1/tumor_spots_tutorial/README.md
+    branch: identify_normal_cells_noWGS
+
+
+numbat:
+  function: run_numbat
+  where: scripts/numbat/run.R
+  nondefault:
+    max_entropy:
+      value: 0.8
+      default: 0.5
+      source: numbat_spatial_vignette
+      quote: "max_entropy ... should be set to a higher value such as 0.8 (default is 0.5)."
+  required_inputs:
+    lambdas_ref:
+      value: numbat::ref_hca
+      default: null  # NB: required argument, no default
+      source: numbat_vignette
+    df_allele:
+      sim: CalicoST deposit numbat_allele_counts.tsv.gz
+      vishd: UGP 16um pileup + Eagle2 phasing via numbat:::preprocess_allele
+  at_default:
+    genome: "hg38"
+  runtime:
+    ncores: {sim: 8, vishd: 12}
+  input_binning:
+    vishd: 32um bins summed from 16um  # NB: stats::hclust stops above 65536 items
+
+clonalscope:
+  visium_tutorial:
+    description: Visium tumor_spots_tutorial, call for call; only file paths differ.
+    where: scripts/clonalscope/tutorial.R
+    config: [configs/clonalscope.ovarian.yaml, configs/clonalscope.calicost-sim.yaml]
+    nondefault:
+      FindNormalReference.method:
+        value: "pca"
+        default: "marker"  # NB: match.arg picks the first of c("marker", "pca")
+        source: clonalscope_visium_tutorial
+        quote: 'FindNormalReference(counts=mtx, gene_symbols=gene_symbols,method="pca")'
+      seg_table_filtered:
+        value: chromosome arms from data-raw/cytoarm_table_hg38.txt, states = 1
+        default: null  # NB: required input
+        source: clonalscope_visium_tutorial
+      RunCovCluster.alpha:
+        value: 5
+        default: 2
+        source: clonalscope_visium_tutorial
+        quote: "bed=bed,alpha=5,beta=5,"
+      RunCovCluster.beta:
+        value: 5
+        default: 2
+        source: clonalscope_visium_tutorial
+        quote: "bed=bed,alpha=5,beta=5,"
+      RunCovCluster.include:
+        value: "all"
+        default: "tumor"
+        source: clonalscope_visium_tutorial
+        quote: "var_pt=0.99, var_pt_ctrl=0.99, include='all',"
+      RunCovCluster.est_cap:
+        value: 2
+        default: 3
+        source: clonalscope_visium_tutorial
+        quote: "breaks=50, prep_mode = 'intersect', est_cap = 2,"
+    at_default:
+      RunCovCluster: {var_pt: 0.99, var_pt_ctrl: 0.99, alpha_source: "all", ctrl_region: null,
+                      breaks: 50, prep_mode: "intersect", clust_mode: "all", seed: 200}
+      MalignantAssignment: {cutoff: 0.5}
+    runtime:
+      threads: 1
+

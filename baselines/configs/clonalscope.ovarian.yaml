@@ -1,0 +1,10 @@
+# Clonalscope on Visium HD 3prime ovarian H1-N3KXRGQ: 16um Space Ranger bins and 32um bins summed from 16um.
+# Method arguments are fixed in scripts/clonalscope/tutorial.R (Visium tumor_spots_tutorial).
+dataset: ovarian
+samples: [H1-N3KXRGQ, H1-N3KXRGQ_032um]
+# NB: sample -> dataset sample whose 16um matrix is summed to bin_um, into <outdir>/<sample>/input/ (common/aggregate_10x_matrix.R)
+aggregate:
+  H1-N3KXRGQ_032um: {source: H1-N3KXRGQ, bin_um: 32}
+outdir: /n/fs/ragr-data/datasets/Visium_HD_3prime/benchmark/clonalscope
+run_label: visium_tutorial
+ploidy: 2
