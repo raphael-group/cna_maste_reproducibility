@@ -24,8 +24,22 @@ Script names below are relative to `scripts/`.
 | `common/config.sh` | conda root and `get`, the YAML reader of the shell scripts |
 | `common/resource_sampler.sh` | per-minute RSS and CPU of a process tree |
 | `common/samples.smk` | dataset, samples and 10x matrix dirs, included by every snakefile |
-| `common/prepare_sim_inputs.smk`, `common/h5ad_to_10x.py` | simulation h5ad to 10x matrix dir, read by Clonalscope and Numbat |
+| `common/prepare_sim_inputs.smk`, `common/h5ad_to_10x.py` | the simulations' inputs for every baseline, or one (below) |
 | `common/aggregate_10x_matrix.R` | a 16um 10x matrix summed into coarser bins |
+
+The simulations' inputs, `common/prepare_sim_inputs.smk`, for every baseline by default, or for one with `--config methods=<method>`; `run_baseline.sh <method> calicost-sim` runs it first with its own method:
+
+| `methods` | Prepares |
+| --- | --- |
+| `numbat` | each simulation's 10x matrix dir from its h5ad (`common/h5ad_to_10x.py`), then `<numbat outdir>/<sim>/prep/<sim>.count_mat.rds` (`numbat/build_count_mat.R`) and `<sim>_allele_counts.tsv.gz`, the deposit's `numbat_allele_counts.tsv.gz` as is |
+| `clonalscope` | each simulation's 10x matrix dir, and Clonalscope's reference directory (`clonalscope/build_refs_clonalscope.sh`) |
+| `calicost` | nothing: CalicoST reads the deposit's simulation folders as they are (`calicost/repro.sh`) |
+| `all` (default) | all of the above |
+
+```sh
+snakemake -s scripts/common/prepare_sim_inputs.smk --configfile configs/datasets.yaml configs/metadata.yaml --cores 8
+snakemake -s scripts/common/prepare_sim_inputs.smk --config methods=numbat --configfile configs/datasets.yaml configs/metadata.yaml --cores 8
+```
 
 Install commands run from `baselines/` in bash, after `source scripts/common/config.sh`.
 
@@ -42,17 +56,16 @@ E=$(get 'c["software"]["envs"]["clonalscope"]' configs/metadata.yaml)
 $CONDA/bin/mamba env create -p $E -f envs/clonalscope.yaml
 $E/bin/R -e 'remotes::install_github("seasoncloud/Clonalscope@07dd0c576b6754d18dda86ec8905d8a9be5e77b0", upgrade="never")'
 
-# NB: data-raw/ at the same commit, into references.clonalscope_data_raw
+# NB: data-raw/ at the same commit, bins and arm table, into references.clonalscope_data_raw's parent
 D=$(get 'c["references"]["clonalscope_data_raw"]' configs/metadata.yaml)
-git clone https://github.com/seasoncloud/Clonalscope /n/fs/scratch/rl6004/Clonalscope
-git -C /n/fs/scratch/rl6004/Clonalscope checkout 07dd0c576b6754d18dda86ec8905d8a9be5e77b0
-mkdir -p $D && cp /n/fs/scratch/rl6004/Clonalscope/data-raw/{sizes.cellranger-GRCh38-1.0.0.txt,cyclegenes.rds,hg38.genes.bed,cytoarm_table_hg38.txt} $D/
+ENV=$E bash scripts/clonalscope/build_refs_clonalscope.sh "$(dirname "$D")"
 ```
+`run_baseline.sh clonalscope calicost-sim` also builds the reference directory, in `common/prepare_sim_inputs.smk`, where it is missing; `clonalscope ovarian` does not run that stage, so the ovarian case needs the command above first.
 
 Run; finished samples are skipped, `-n` is a dry run, `CORES` sets parallel samples:
 ```sh
 bash scripts/run_baseline.sh clonalscope ovarian        # H1-N3KXRGQ 16um and 32um
-bash scripts/run_baseline.sh clonalscope calicost-sim   # 10x inputs from h5ad, then every simulation
+bash scripts/run_baseline.sh clonalscope calicost-sim   # references and 10x inputs from h5ad, then every simulation
 ```
 Outputs: `<outdir>/<sample>/visium_tutorial/{raw_output,postprocess}/`; logs `logs/clonalscope_{ovarian,calicost-sim}.*`.
 
@@ -65,7 +78,7 @@ Outputs: `<outdir>/<sample>/visium_tutorial/{raw_output,postprocess}/`; logs `lo
 - Commit: CRAN 1.5.2 via bioconda `r-numbat`; GitHub has no `v1.5.2` tag, the commit setting `Version: 1.5.2` is `54d8268f3d14bd6afaa6784eeb839db7479a8947`
 - Tutorials: [numbat vignette](https://kharchenkolab.github.io/numbat/articles/numbat.html) (scRNA mode, `ref_hca`), [spatial vignette](https://kharchenkolab.github.io/numbat/articles/spatial-rna.html) (`max_entropy = 0.8` for Visium)
 
-Stages: preprocess (ovarian, `numbat/preprocess_ovarian.smk`: 16um counts and UGP pileup summed to 32um bins, allele counts from UGP phasing via `numbat:::preprocess_allele`; simulations, `numbat/preprocess_sim.smk`: the deposit's `numbat_allele_counts.tsv.gz`), then `numbat/run.smk` (`run_numbat()`), then `numbat/postprocess.smk` (`cells.tsv`, `cluster_states.tsv`). Non-default arguments and their sources: `configs/nondefault_params.yaml` (`numbat`).
+Stages: preprocess (ovarian, `numbat/preprocess_ovarian.smk`: 16um counts and UGP pileup summed to 32um bins, allele counts from UGP phasing via `numbat:::preprocess_allele`; simulations, `common/prepare_sim_inputs.smk` with `methods=numbat`: the deposit's `numbat_allele_counts.tsv.gz`), then `numbat/run.smk` (`run_numbat()`), then `numbat/postprocess.smk` (`cells.tsv`, `cluster_states.tsv`). Non-default arguments and their sources: `configs/nondefault_params.yaml` (`numbat`).
 
 ```sh
 $CONDA/bin/mamba env create -p $(get 'c["software"]["envs"]["numbat"]' configs/metadata.yaml) -f envs/numbat.yaml

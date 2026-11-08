@@ -22,7 +22,8 @@
 #   Stages run in order and stop at the first failure; a stage is scripts/{<method>,common}/<stage>.smk, logged by
 #   its file name. CORES sets snakemake --cores (default nproc). --rerun-triggers mtime keeps finished
 #   outputs when only the shell command text changed. calicost runs scripts/calicost/ovarian.sh or
-#   scripts/calicost/sim.sh, which take no snakemake args.
+#   scripts/calicost/sim.sh, which take no snakemake args. The common/prepare_sim_inputs stage prepares the
+#   simulations' inputs of <method> alone (--config methods=<method>).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/common/config.sh
@@ -31,7 +32,7 @@ method=$1; run_case=$2; shift 2
 tag=${method}_${run_case}
 case $tag in
     numbat_ovarian) stages=(numbat/preprocess_ovarian numbat/run numbat/postprocess) ;;
-    numbat_calicost-sim) stages=(common/prepare_sim_inputs numbat/preprocess_sim numbat/run numbat/postprocess) ;;
+    numbat_calicost-sim) stages=(common/prepare_sim_inputs numbat/run numbat/postprocess) ;;
     clonalscope_ovarian) stages=(clonalscope/run clonalscope/decode_states) ;;
     clonalscope_calicost-sim) stages=(common/prepare_sim_inputs clonalscope/run clonalscope/decode_states) ;;
     calicost_ovarian) exec bash scripts/calicost/ovarian.sh ;;
@@ -48,8 +49,10 @@ for smk in "${stages[@]}"; do
     echo "$(date '+%F %T') START ${stage}" >> logs/${tag}.status
     bash scripts/common/resource_sampler.sh $$ "${tag}" "${stage}" >> logs/${tag}.resources.tsv &
     sampler=$!
+    only=()
+    if [[ $stage == prepare_sim_inputs ]]; then only=(--config "methods=${method}"); fi
     set +e
-    snakemake -s "scripts/${smk}.smk" --configfile "${configs[@]}" --cores "${CORES:-$(nproc)}" -p \
+    snakemake -s "scripts/${smk}.smk" ${only[@]+"${only[@]}"} --configfile "${configs[@]}" --cores "${CORES:-$(nproc)}" -p \
         --rerun-incomplete --rerun-triggers mtime "$@" > logs/${tag}.${stage}.log 2>&1
     rc=$?
     set -e
