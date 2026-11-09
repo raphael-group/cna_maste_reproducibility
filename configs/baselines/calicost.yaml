@@ -12,7 +12,6 @@ calicost-sim:
   sims: all            # NB: "all" = every numcnas* folder of the deposit, or a list
   rects: [0, 1, 2, 3, 4]  # NB: a simulation's job runs its rects at once, one core each
 ovarian:
-  mem_max: ""          # NB: cgroup MemoryMax per run; empty = MEM_GB
   inputs:
     "{sample}_016um": {bin_um: 16}
   # NB: tag -> its input and the configuration_cna keys it sets; min_snpumi_perspot defaults to 50

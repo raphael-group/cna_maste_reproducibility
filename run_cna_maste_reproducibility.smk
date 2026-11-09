@@ -4,8 +4,8 @@
 #
 # Dependencies:
 #   CNA_MASTE_REPRODUCIBILITY_ENV (configs/envs/cna_maste_reproducibility.yaml): snakemake, pyyaml, pandas, pysam, uv,
-#   git; conda at CONDA_ROOT; pdflatex for the analysis' LaTeX tables; Linux for the method runs (GNU time, systemd
-#   scopes for CalicoST's memory cap).
+#   git; conda at CONDA_ROOT; pdflatex for the analysis' LaTeX tables; Linux for the method runs (GNU time and
+#   timeout, systemd user scopes for the baseline runs' BASELINE_LIMITS).
 #
 # Usage:
 #   snakemake -s run_cna_maste_reproducibility.smk --cores <CORES> --resources mem_mb=<MEM_GB * 1024> [target ...] \
@@ -36,6 +36,7 @@
 import contextlib
 import json
 import os
+import re
 import sys
 
 import yaml
@@ -78,6 +79,13 @@ MAMBA = f"{CONDA}/bin/mamba" if os.path.exists(f"{CONDA}/bin/mamba") else f"{CON
 PY = sys.executable
 BIN = os.path.dirname(PY)
 BASELINES = f"{REPO}/scripts/baselines"
+# NB: each baseline run's hard limits (scripts/baselines/common/limit.sh)
+MAX_WALLTIME = str(C["BASELINE_LIMITS"]["max_walltime"])
+MAX_RSS = str(C["BASELINE_LIMITS"]["max_rss"])
+if not re.fullmatch(r"\d+[smhd]?", MAX_WALLTIME):
+    raise ValueError(f"BASELINE_LIMITS max_walltime {MAX_WALLTIME}: <N>[s|m|h|d], e.g. 24h")
+if not re.fullmatch(r"\d+[KMGT]?", MAX_RSS):
+    raise ValueError(f"BASELINE_LIMITS max_rss {MAX_RSS}: <N>[K|M|G|T], e.g. 512G")
 
 REPOS = {key: under_repo(C[key]) for key in C["REPOS"]}
 ENVS = {key: under_repo(C[key]) for key in C["ENV_RECIPES"]}
@@ -192,6 +200,13 @@ def in_env(env):
 
 
 IN_CLONALSCOPE = in_env("CLONALSCOPE_ENV")
+
+
+def limited(status):
+    """A shell prefix running a baseline's command under BASELINE_LIMITS, its START and END lines to `status`."""
+    return f"bash {BASELINES}/common/limit.sh {MAX_WALLTIME} {MAX_RSS} {status} "
+
+
 # NB: what CalicoST's scripts read: their configs, conda, a python with pyyaml and numpy >= 2, and the logs' directory
 CALICOST_SHELL = f"CONFIGS={CFG}/baselines CONDA={CONDA} PY={PY} LOGS={LOGS}/baselines"
 
@@ -798,7 +813,8 @@ rule numbat_run:
     output:
         touch(f"{OUT}/{{case}}/numbat/{{s}}/{{label}}/run_numbat/done"),
     log:
-        f"{OUT}/{{case}}/numbat/logs/run_numbat.{{s}}.{{label}}.log",
+        run=f"{OUT}/{{case}}/numbat/logs/run_numbat.{{s}}.{{label}}.log",
+        status=f"{OUT}/{{case}}/numbat/logs/run_numbat.{{s}}.{{label}}.status",
     benchmark:
         f"{OUT}/{{case}}/numbat/bench/run_numbat.{{s}}.{{label}}.tsv"
     threads: lambda wc: NUMBAT[CASES[wc.case]]["ncores"]
@@ -807,8 +823,9 @@ rule numbat_run:
         max_entropy=lambda wc: NUMBAT[CASES[wc.case]]["max_entropy"],
     shell:
         in_env("NUMBAT_ENV")
+        + limited("{log.status}")
         + "Rscript {BASELINES}/numbat/run.R {input.count_mat} {input.allele} {params.od} {threads} "
-        "{params.max_entropy} > {log} 2>&1"
+        "{params.max_entropy} > {log.run} 2>&1"
 
 
 # NB: run_numbat's outputs -> <sample>.RNA.cells.tsv and cluster_states.tsv
@@ -858,7 +875,8 @@ rule clonalscope_run:
     output:
         f"{OUT}/{{case}}/clonalscope/{{s}}/{{label}}/raw_output/{{s}}.cells.tsv",
     log:
-        f"{OUT}/{{case}}/clonalscope/logs/run_tutorial.{{s}}.{{label}}.log",
+        run=f"{OUT}/{{case}}/clonalscope/logs/run_tutorial.{{s}}.{{label}}.log",
+        status=f"{OUT}/{{case}}/clonalscope/logs/run_tutorial.{{s}}.{{label}}.status",
     benchmark:
         f"{OUT}/{{case}}/clonalscope/bench/run_tutorial.{{s}}.{{label}}.tsv"
     params:
@@ -866,8 +884,10 @@ rule clonalscope_run:
         od=lambda wc: f"{OUT}/{wc.case}/clonalscope/{wc.s}/{wc.label}/raw_output",
     shell:
         in_env("CLONALSCOPE_ENV")
-        + "OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 Rscript {BASELINES}/clonalscope/tutorial.R {wildcards.s} "
-        "{params.mdir} {CLONALSCOPE_DATA_RAW} {params.od} > {log} 2>&1"
+        + "OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 "
+        + limited("{log.status}")
+        + "Rscript {BASELINES}/clonalscope/tutorial.R {wildcards.s} "
+        "{params.mdir} {CLONALSCOPE_DATA_RAW} {params.od} > {log.run} 2>&1"
 
 
 # NB: RunCovCluster's result_final -> per-cluster copies; a run that left no Cov_obj.rds (Clonalscope stopped) is
@@ -908,15 +928,17 @@ rule calicost_sim:
     output:
         touch(f"{ZS}/calicost/{{sim}}/repro.done"),
     log:
-        f"{LOGS}/run/calicost_sim/{{sim}}.log",
+        run=f"{LOGS}/run/calicost_sim/{{sim}}.log",
+        status=f"{LOGS}/run/calicost_sim/{{sim}}.status",
     benchmark:
         f"{LOGS}/run/calicost_sim/{{sim}}.tsv"
     threads: len(CALICOST["calicost-sim"]["rects"])
     params:
         rects=" ".join(map(str, CALICOST["calicost-sim"]["rects"])),
     shell:
-        "{CALICOST_SHELL} bash {BASELINES}/calicost/repro.sh {wildcards.sim} {ZS}/calicost '{params.rects}' "
-        "> {log} 2>&1"
+        "{CALICOST_SHELL} "
+        + limited("{log.status}")
+        + "bash {BASELINES}/calicost/repro.sh {wildcards.sim} {ZS}/calicost '{params.rects}' > {log.run} 2>&1"
 
 
 # NB: a staged copy of UGP's formatted bins, unique_snp_ids.npy re-saved for CalicoST's numpy 1.24
@@ -933,7 +955,7 @@ rule calicost_stage_input:
         "{CALICOST_SHELL} bash {BASELINES}/calicost/stage_input.sh {input.source} {output} > {log} 2>&1"
 
 
-# NB: one run of configs/baselines/calicost.yaml: its configuration_cna written, then run under a cgroup MemoryMax
+# NB: one run of configs/baselines/calicost.yaml: its configuration_cna written, then run under BASELINE_LIMITS
 rule calicost_ovarian:
     input:
         f"{SETUP}/CALICOST_REPO.ok",
@@ -949,11 +971,10 @@ rule calicost_ovarian:
         mem_mb=MEM_MB,
     params:
         configuration=f"{LOGS}/baselines/calicost_{{tag}}.configuration_cna",
-        mem_max=CALICOST["ovarian"]["mem_max"] or f"{C['MEM_GB']}G",
     shell:
         "{{ {CALICOST_SHELL} {PY} -I {BASELINES}/calicost/ovarian_config.py write {wildcards.tag} "
         "{params.configuration} && {CALICOST_SHELL} bash {BASELINES}/calicost/run.sh {wildcards.tag} "
-        "{params.configuration} {params.mem_max}; }} "
+        "{params.configuration} {MAX_WALLTIME} {MAX_RSS}; }} "
         "> {log} 2>&1"
 
 

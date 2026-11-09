@@ -13,6 +13,12 @@
 # Set: the run's resources; pass the same to snakemake: --cores <CORES> --resources mem_mb=<MEM_GB * 1024>
 CORES: 32
 MEM_GB: 256
+# NB: hard limits of each baseline run (Numbat, Clonalscope, CalicoST; scripts/baselines/common/limit.sh): wall time,
+#     a GNU timeout duration <N>[s|m|h|d], default 24h; memory, a systemd user scope's MemoryMax <N>[K|M|G|T] with
+#     swap off, default 512G. A run over either is stopped and its rule fails.
+BASELINE_LIMITS:
+  max_walltime: 24h
+  max_rss: 512G
 # NB: conda root, its etc/profile.d/conda.sh activates the method environments and its mamba builds them
 CONDA_ROOT: /path/to/miniconda3
 

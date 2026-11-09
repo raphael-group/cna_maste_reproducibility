@@ -59,8 +59,8 @@ in [celltyping.md](celltyping.md).
 > - cnamaste's repository is private: cloning it needs read access and a git holding your GitHub credentials. On macOS
 >   the system git (`/usr/bin/git`) reads them from the keychain; conda-forge's git has no credential helper set.
 > - The method runs need Linux x86_64: bioconda builds `eagle2` (UGP's phaser) and `r-numbat` for `linux-64` and
->   `osx-64` alone, and CalicoST's runs need GNU time and systemd user scopes with the memory controller delegated,
->   for their `MemoryMax`. The LaTeX tables need `pdflatex` (TeX Live). The README's first commands check each.
+>   `osx-64` alone, and the baseline runs need GNU time and timeout and systemd user scopes with the memory controller
+>   delegated, for their `BASELINE_LIMITS`. The LaTeX tables need `pdflatex` (TeX Live). The README's first commands check each.
 
 ---
 
@@ -77,6 +77,7 @@ what is run or scored. A relative path is under the repository, and
 | Key | Description |
 |---|---|
 | `CORES`, `MEM_GB` | The run's CPUs and memory; pass the same to `snakemake --cores <CORES> --resources mem_mb=<MEM_GB * 1024>`. |
+| `BASELINE_LIMITS` | Each baseline run's hard limits: `max_walltime`, a GNU `timeout` duration, default `24h`; `max_rss`, a systemd user scope's `MemoryMax` with swap off, default `512G` ([Baselines](#baselines)). |
 | `CONDA_ROOT` | Its `etc/profile.d/conda.sh` activates the method environments; its mamba builds them. |
 | `CALICOST_ZENODO_SIM_ROOT` | `CalicoST_simulation_deposit.zip` of [doi:10.5281/zenodo.14175627](https://doi.org/10.5281/zenodo.14175627), unzipped: `simulated_data_related/`, `nomixing_calicost_related/`, `numbat_related/`. |
 | `OVARIAN_SPACERANGER_ROOT` | The Visium HD 3' ovarian sample's Space Ranger `outs/`, with `possorted_genome_bam.bam` (`spaceranger count --create-bam=true`) and `binned_outputs/square_016um/`. |
@@ -125,7 +126,7 @@ A key left out keeps the method's default; each config's header cites the source
 | `configs/baselines/numbat.yaml` | `calicost-sim`, `ovarian` | `run_label`, `ncores`, `max_entropy` (0.8, the [spatial vignette](https://kharchenkolab.github.io/numbat/articles/spatial-rna.html)'s; default 0.5); ovarian `bin_um: 32`. |
 | `configs/baselines/clonalscope.yaml` | `calicost-sim`, `ovarian` | `run_label`, `ploidy`; ovarian `bins_um`, the bin sides run. The method's arguments are fixed in `scripts/baselines/clonalscope/tutorial.R`. |
 | `configs/baselines/calicost.yaml` | `calicost-sim` | `sims` (`all`, every `numcnas*` folder of the deposit, or a list), `rects` (the initializations run at once per simulation, one core each). |
-| | `ovarian` | `mem_max` (cgroup `MemoryMax` per run; empty: `MEM_GB`), `inputs` (bin side), `runs` (tag: its input and the `configuration_cna` keys it sets; `msu<N>` sets `min_snpumi_perspot = N`), `configuration_cna` (CalicoST's default). |
+| | `ovarian` | `inputs` (bin side), `runs` (tag: its input and the `configuration_cna` keys it sets; `msu<N>` sets `min_snpumi_perspot = N`), `configuration_cna` (CalicoST's default). |
 | `CNAMASTE` | `zenodo_sim` | `solvers` (`<label_solver>-<initializer>-<decoder>`), `random_seeds`, `qa_solver`, `calicost_ploidy`, `threads`, `config` (cnamaste's `zenodo_sim_config.yaml` at `cleanup3`, less its paths and references). |
 | | `ovarian` | `threads`, `config` (`hmrf.lattice_type: square`, which has no default). |
 
@@ -239,8 +240,10 @@ per step and sample, in its own environment, running a program of `scripts/basel
 > stops above 65536 items, and the 16 um slide exceeds that.
 
 > [!WARNING]
-> `calicost/run.sh` needs systemd user scopes with the memory controller; a run over `MemoryMax` is killed (status
-> `rc=137 (killed: OOM ...)`).
+> Each baseline's run rule, `numbat_run`, `clonalscope_run`, `calicost_sim` (a simulation's whole job) and
+> `calicost_ovarian`, runs its program through `common/limit.sh`: GNU `timeout` at `max_walltime` inside a systemd
+> user scope with `MemoryMax` at `max_rss` (`BASELINE_LIMITS`). A run over either limit is stopped and its rule fails;
+> the `.status` file beside its log has the exit code, 124 for the wall time or 137 for memory, and the limit.
 
 Diagnostics, run by hand with their paths as arguments: `calicost/compare_repro.py` (a CalicoST rerun against the
 deposit's), `numbat/run_stats.py` (Numbat input sizes and step timings), `common/extract_deposit_results.py` (the
@@ -547,7 +550,7 @@ where it holds every labelled tumour clone, else the first of `calicost_fallback
 | `<OUTDIR>/zenodo_sim/simulation.runtime.tsv`, `<OUTDIR>/ovarian/runtime.<sample>.tsv` | Each run's runtime and memory (`scripts/metrics/runtime.py`): a Snakemake `benchmark:`'s `s` / 60 and `max_pss` / 1024, CalicoST's `/usr/bin/time -v`; NA where not recorded. |
 | `<OUTDIR>/benchmark_results/` | The analysis' `tsvs/`, `text/`, `plots/` and `pdf-pages/`. |
 | `<OUTDIR>/logs/<step>/<rule>[.<wildcards>].log` | Each job's log, its runtime and memory (`benchmark:`) in the `.tsv` beside it. |
-| `<OUTDIR>/<case>/<method>/{logs,bench}/` | A method's per-sample run logs and benchmarks; CalicoST's ovarian runs in `<OUTDIR>/logs/baselines/`. |
+| `<OUTDIR>/<case>/<method>/{logs,bench}/` | A method's per-sample run logs, each with its `BASELINE_LIMITS` `.status`, and benchmarks; CalicoST's ovarian runs in `<OUTDIR>/logs/baselines/`. |
 
 ### Tables
 
