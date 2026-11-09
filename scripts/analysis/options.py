@@ -5,11 +5,11 @@ Runpeng Luo (2026-11-09), from `scripts/run_benchmark.py`'s command line (2026-1
 Dependencies: a cnamaste repository, `$CNAMASTE_ROOT`, its `python/` on `PYTHONPATH` (`get_cnamaste_root`); pyyaml.
 
 `run_cna_maste_reproducibility.smk` writes `<OUTDIR>/configs/analysis_options.yaml`, one key per field of
-`AnalysisOptions`, from `configs/analysis.yaml` and the benchmark yaml's `vishd.<sample>`; each step reads it
-(`read_options`).
+`AnalysisOptions`, from the benchmark yaml's `vishd.<sample>` and the config's `ANALYSIS`; each step reads it
+(`read_options`); an option it leaves out keeps its default.
 
 Inputs:
-    benchmark_yaml: the runs, the pipeline's `<OUTDIR>/configs/benchmark.yaml` by default (`configs/analysis.yaml`).
+    benchmark_yaml: the runs, the pipeline's `<OUTDIR>/configs/benchmark.yaml`.
         simulation: its `simulation` entry (`metrics.simulation_metrics.read_simulation_config`):
             groundtruth_dir: a directory per simulation, its `truth_clone_labels.tsv` and `truth_acn_profile.tsv`
                 (`truth.read_truth`).
@@ -25,7 +25,7 @@ Inputs:
             `MSR<msr>/<assay>/`, their UMI and phased allele counts per spot
             (`metrics.read_method_input.read_bin_counts`).
     config_yaml: `reference.bed_file`, the region bed, and `reference.refdata.gene_list.gtf_file`, the genes
-        (`metrics.gene_level.read_reference_files`), the pipeline's `<OUTDIR>/configs/config.yaml` by default.
+        (`metrics.gene_level.read_reference_files`), the pipeline's `<OUTDIR>/configs/config.yaml`.
     spaceranger_dir: a Space Ranger directory of the sample, any bin side: `spatial/tissue_positions.parquet`, which
         places every bin (`platforms.visium.get_visiumhd_bin_pixels`), `scalefactors_json.json` and the
         H&E image.

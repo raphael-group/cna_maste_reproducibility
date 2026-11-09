@@ -14,9 +14,3 @@ docs/opt_notes.md
 docs/prep_comparison.md
 docs/figure-rule.md
 docs/click_go.md
-
-# Local analysis configs: runs copied under tmp/input_data/, and the cluster paths they came from.
-configs/analysis.local.yaml
-configs/benchmark.local.yaml
-configs/benchmark.remote.yaml
-configs/config.local.yaml

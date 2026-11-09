@@ -30,9 +30,8 @@
 #   inputs per simulation; Universal-Genotyping-Pipeline on the sample, then each method's inputs from it; cell types),
 #   run_methods (Numbat, Clonalscope and CalicoST per case and sample, scripts/baselines/<method>/; cnamaste per
 #   simulation, solver and seed, as cnamaste's batch_zenodo_run.sh runs it, and on the sample), analysis (the four
-#   steps of scripts/analysis/, each a rule). Every step is a rule of this file: no nested workflow.
-#   ANALYSIS_CONFIG's benchmark_yaml and config_yaml set to existing runs make the analysis need only the cnamaste
-#   analysis checkout and its environment.
+#   steps of scripts/analysis/, each a rule, on this pipeline's runs). Every step is a rule of this file: no nested
+#   workflow.
 
 import contextlib
 import json
@@ -85,8 +84,8 @@ ENVS = {key: under_repo(C[key]) for key in C["ENV_RECIPES"]}
 CALICOST = read_yaml(C["CALICOST_CONFIG"])
 NUMBAT = read_yaml(C["NUMBAT_CONFIG"])
 CLONALSCOPE = read_yaml(C["CLONALSCOPE_CONFIG"])
-CNAMASTE = read_yaml(C["CNAMASTE_CONFIG"])
-ANALYSIS = read_yaml(C["ANALYSIS_CONFIG"])
+CNAMASTE = C["CNAMASTE"]
+ANALYSIS = C["ANALYSIS"]
 
 # NB: simulations: every numcnas* folder of the deposit's simulated_data_related/
 ZENODO = C["CALICOST_ZENODO_SIM_ROOT"]
@@ -178,6 +177,13 @@ CALICOST_RUNS = {
 if any(spec["bin_um"] != 16 for spec in CALICOST_INPUTS.values()):
     raise ValueError(f"{C['CALICOST_CONFIG']}: ovarian inputs are UGP's 16um bins alone, bin_um 16")
 CALICOST_INPUT_SOURCES = {name: BB16 for name in CALICOST_INPUTS}
+# NB: the ovarian CalicoST run the analysis scores, named in the figures by its tag's last word, e.g. msu20
+CALICOST_ANALYSIS_RUN = ANALYSIS["calicost_run"].format(sample=SAMPLE)
+if CALICOST_ANALYSIS_RUN not in CALICOST_RUNS:
+    raise ValueError(f"ANALYSIS calicost_run {CALICOST_ANALYSIS_RUN}: not a run of {C['CALICOST_CONFIG']}")
+CALICOST_LABEL = CALICOST_ANALYSIS_RUN.rsplit("_", 1)[-1]
+if ANALYSIS["calicost_sim"] not in ("deposit", "rerun"):
+    raise ValueError(f"ANALYSIS calicost_sim {ANALYSIS['calicost_sim']}: deposit or rerun")
 
 
 def in_env(env):
@@ -260,18 +266,13 @@ wildcard_constraints:
 ##################################################
 # Targets
 
-# NB: the analysis' runs and references: existing runs where ANALYSIS_CONFIG names them, else the pipeline's
-ANALYSIS_YAMLS = [
-    under_repo(ANALYSIS.get("benchmark_yaml") or f"{CFG}/benchmark.yaml"),
-    under_repo(ANALYSIS.get("config_yaml") or f"{CFG}/config.yaml"),
-]
-ANALYSIS_OPTIONS = ANALYSIS.get("options") or {}
 ANALYSIS_ROOT = REPOS["CNAMASTE_ANALYSIS_REPO"]
 RESULTS = f"{OUT}/benchmark_results"
-SIM_DATASET = ANALYSIS_OPTIONS.get("simulation_dataset", "calicost-sim")
-REAL_DATASET = ANALYSIS_OPTIONS.get("real_data_dataset", "ovarian")
-TEXTS = [ANALYSIS_OPTIONS.get("table", "table"), ANALYSIS_OPTIONS.get("metric_text", "metric")]
-FIGURES = [ANALYSIS_OPTIONS.get(name, f"{name}.pdf") for name in ("combined", "diagnosis", "appendix")]
+# NB: AnalysisOptions' default names (scripts/analysis/options.py)
+SIM_DATASET = "calicost-sim"
+REAL_DATASET = "ovarian"
+TEXTS = ["table", "metric"]
+FIGURES = ["combined.pdf", "diagnosis.pdf", "appendix.pdf"]
 ANALYSIS_OUTPUTS = [
     *[f"{RESULTS}/text/{name}.pdf" for name in TEXTS],
     *[f"{RESULTS}/plots/{name}" for name in FIGURES],
@@ -490,12 +491,12 @@ rule calicost_configs:
 
 
 rule cnamaste_configs:
-    input:
-        under_repo(C["CNAMASTE_CONFIG"]),
     output:
         expand(f"{CFG}/cnamaste.{{case}}.yaml", case=CASES),
     log:
         f"{LOGS}/prepare/cnamaste_configs.log",
+    params:
+        cnamaste=json.dumps(CNAMASTE, sort_keys=True),
     run:
         for case in CASES:
             write_yaml(
@@ -1161,12 +1162,12 @@ rule benchmark_yaml:
     run:
         numbat, clonalscope = NUMBAT["ovarian"]["run_label"], CLONALSCOPE["ovarian"]["run_label"]
         clonalscope_sample = SAMPLE if 32 not in CLONALSCOPE["ovarian"]["bins_um"] else f"{SAMPLE}_032um"
-        tags = list(CALICOST_RUNS)
-        reference = f"_{ANALYSIS['calicost_label']}"
-        keys = {
-            t: "calicost" if t.endswith(reference) else f"calicost_{t.removeprefix(SAMPLE + '_')}" for t in tags
+        calicost_runs = {
+            "calicost" if t == CALICOST_ANALYSIS_RUN else f"calicost_{t.removeprefix(SAMPLE + '_')}": {
+                "dir": f"{OV}/calicost/{t}"
+            }
+            for t in CALICOST_RUNS
         }
-        calicost_runs = {keys[t]: {"dir": f"{OV}/calicost/{t}"} for t in tags}
         vishd = {
             "runtime": f"{OV}/runtime.{SAMPLE}.tsv",
             "ugp": {
@@ -1229,11 +1230,11 @@ def figure_options(benchmark_yaml):
     return {
         "spaceranger_dir": path(entry["ugp"]["spaceranger_dir"]),
         "spots": path(entry["ugp"]["spots"]),
-        "bb_dir": [f"{side}={path(bb[side])}" for side in ANALYSIS["bb_sides"] if side in bb],
+        "bb_dir": [f"{side}={path(d)}" for side, d in sorted(bb.items())],
         "celltype": path(entry["cell_type"]["labels"]),
         "cnamaste_labels": path(f"{entry['cnamaste']['dir']}/clone_labels_int.tsv.gz"),
         "cnamaste_seglevel": path(f"{entry['cnamaste']['dir']}/cnv_diploid_seglevel.tsv"),
-        "calicost_dir": f"{ANALYSIS['calicost_label']}={path(entry[ANALYSIS['calicost_run']]['dir'])}",
+        "calicost_dir": f"{CALICOST_LABEL}={path(entry['calicost']['dir'])}",
         "numbat_dir": path(entry["numbat"]["dir"]),
         "clonalscope_dir": path(entry["clonalscope"]["dir"]),
     }
@@ -1241,7 +1242,8 @@ def figure_options(benchmark_yaml):
 
 rule analysis_options:
     input:
-        ANALYSIS_YAMLS,
+        rules.benchmark_yaml.output.benchmark,
+        rules.benchmark_yaml.output.config,
     output:
         f"{CFG}/analysis_options.yaml",
     log:
@@ -1256,7 +1258,6 @@ rule analysis_options:
                 "config_yaml": config_yaml,
                 "outdir": RESULTS,
                 **figure_options(benchmark_yaml),
-                **ANALYSIS_OPTIONS,
             },
         )
         shell('echo "cnamaste: {ANALYSIS_ROOT} ($(git -C {ANALYSIS_ROOT} describe --always --dirty))" > {log}')

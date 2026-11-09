@@ -1,27 +1,29 @@
-# Every path and resource of run_cna_maste_reproducibility.smk, the one configuration a run edits.
+# The one configuration of run_cna_maste_reproducibility.smk: every path, resource, repository and environment, and
+# cnamaste's and the analysis' settings.
 #
 # Runpeng Luo (2026-11-08)
 #
-# A relative path is under this repository. /path/to/ marks a value to set. The setup step checks the inputs, clones
-# a missing repository at its revision (REPOS), and builds a missing environment from its recipe (ENV_RECIPES); an
-# existing repository is checked against its revision and left as it is.
+# "Set" sections: copy them into your own yaml, set its /path/to/ values, CORES and MEM_GB, and pass it with
+# --configfile, whose keys override these (README). "Fixed" sections pin the benchmark: changing them changes what is
+# run or scored. A relative path is under this repository. The setup step checks the inputs, clones a missing
+# repository at its revision (REPOS), and builds a missing environment from its recipe (ENV_RECIPES); an existing
+# repository is checked against its revision and left as it is.
 
 ##################################################
-# Resources of the whole run; pass the same numbers to snakemake: --cores <CORES> --resources mem_mb=<MEM_GB * 1024>
+# Set: the run's resources; pass the same to snakemake: --cores <CORES> --resources mem_mb=<MEM_GB * 1024>
 CORES: 32
 MEM_GB: 256
 # NB: conda root, its etc/profile.d/conda.sh activates the method environments and its mamba builds them
 CONDA_ROOT: /path/to/miniconda3
 
 ##################################################
-# Inputs
+# Set: inputs
 # NB: CalicoST_simulation_deposit.zip of https://doi.org/10.5281/zenodo.14175627, unzipped: simulated_data_related/,
 #     nomixing_calicost_related/, numbat_related/
 CALICOST_ZENODO_SIM_ROOT: /path/to/CalicoST_simulation_deposit
 # NB: Space Ranger outs/ of the Visium HD 3' ovarian sample (10x Genomics), with possorted_genome_bam.bam
 #     (spaceranger count --create-bam=true) and binned_outputs/square_016um/
 OVARIAN_SPACERANGER_ROOT: /path/to/outs
-OVARIAN_SAMPLE_ID: H1-N3KXRGQ
 # NB: refdata-gex-GRCh38-2024-A, https://www.10xgenomics.com/support/software/space-ranger/downloads
 #     (https://cf.10xgenomics.com/supp/cell-exp/refdata-gex-GRCh38-2024-A.tar.gz, unpacked)
 PATH_TO_REFDATA: /path/to/refdata-gex-GRCh38-2024-A
@@ -29,7 +31,8 @@ PATH_TO_REFDATA: /path/to/refdata-gex-GRCh38-2024-A
 #     "SNP Panels" and "Population-haplotype Panels" (1kGP n=3,202 hg38: resources/scripts/process_1kGP_3202_panel.sh)
 PATH_TO_SNP_PANEL: /path/to/1kGP_3202_hg38/snps.vcf.gz
 PATH_TO_PHASE_PANEL: /path/to/1kGP_3202_hg38/phasing_panel
-# NB: Eagle2's hg38 genetic map, Eagle_v2.4.1/tables/genetic_map_hg38_withX.txt.gz (https://alkesgroup.broadinstitute.org/Eagle/)
+# NB: Eagle2's hg38 genetic map, Eagle_v2.4.1/tables/genetic_map_hg38_withX.txt.gz
+#     (https://alkesgroup.broadinstitute.org/Eagle/)
 PATH_TO_EAGLE_MAP: /path/to/Eagle_v2.4.1/tables/genetic_map_hg38_withX.txt.gz
 # NB: gene symbol -> Ensembl ID of the reference the simulations were built on, Cell Ranger GRCh38-2020-A
 #     genes/ordered_genes.tsv (Gene, Ensembl_id, ...); scripts/baselines/common/h5ad_to_10x.py
@@ -39,12 +42,12 @@ FORMAT_BB_SCRIPT: /path/to/format_bb.py
 FORMAT_BB_PYTHON: null  # NB: null = CNA_MASTE_REPRODUCIBILITY_ENV's python
 
 ##################################################
-# Outputs: <OUTDIR>/{zenodo_sim,ovarian}/<method>/, <OUTDIR>/benchmark_results/, <OUTDIR>/logs/
+# Set: outputs, <OUTDIR>/{zenodo_sim,ovarian}/<method>/, <OUTDIR>/benchmark_results/, <OUTDIR>/logs/
 OUTDIR: /path/to/outdir
 TMPDIR: null  # NB: null = <OUTDIR>/tmp
 
 ##################################################
-# Repositories: root of each clone
+# Set: root of each clone
 CALICOST_REPO: /path/to/repos/CalicoST
 NUMBAT_REPO: /path/to/repos/numbat
 CLONALSCOPE_REPO: /path/to/repos/Clonalscope
@@ -53,7 +56,23 @@ CNAMASTE_REPO: /path/to/repos/cna_maste
 CNAMASTE_ANALYSIS_REPO: /path/to/repos/cna_maste_analysis
 UGP_REPO: /path/to/repos/Universal-Genotyping-Pipeline
 
-# NB: repository -> url and revision, a commit or a branch
+##################################################
+# Set: prefix of each environment
+CALICOST_ENV: /path/to/envs/calicost_env
+NUMBAT_ENV: /path/to/envs/numbat_env
+CLONALSCOPE_ENV: /path/to/envs/clonalscope_env
+CNAMASTE_ENV: /path/to/envs/cnamaste_env
+CNAMASTE_ANALYSIS_ENV: /path/to/envs/cnamaste_analysis_env
+UNIVERSAL_GENOTYPING_PIPELINE_ENV: /path/to/envs/universal-genotyping-env
+CELLTYPING_ENV: /path/to/envs/celltyping_env
+CNA_MASTE_REPRODUCIBILITY_ENV: /path/to/envs/cna_maste_reproducibility
+
+##################################################
+# Fixed: the ovarian sample's id (scripts/metrics/runtime.py names its runs by it)
+OVARIAN_SAMPLE_ID: H1-N3KXRGQ
+
+##################################################
+# Fixed: repository -> url and revision, a commit or a branch
 REPOS:
   CALICOST_REPO:
     url: https://github.com/raphael-group/CalicoST
@@ -78,18 +97,8 @@ REPOS:
     rev: c5c0b9b9ccb84268f4d29f9840dd91b71d793d7d
 
 ##################################################
-# Environments: prefix of each
-CALICOST_ENV: /path/to/envs/calicost_env
-NUMBAT_ENV: /path/to/envs/numbat_env
-CLONALSCOPE_ENV: /path/to/envs/clonalscope_env
-CNAMASTE_ENV: /path/to/envs/cnamaste_env
-CNAMASTE_ANALYSIS_ENV: /path/to/envs/cnamaste_analysis_env
-UNIVERSAL_GENOTYPING_PIPELINE_ENV: /path/to/envs/universal-genotyping-env
-CELLTYPING_ENV: /path/to/envs/celltyping_env
-CNA_MASTE_REPRODUCIBILITY_ENV: /path/to/envs/cna_maste_reproducibility
-
-# NB: environment -> its recipe: a conda yaml (`{UGP_REPO}` its clone), or uv:<repository>[:<group>] for that
-#     repository's uv.lock (uv sync --locked --all-extras into the prefix)
+# Fixed: environment -> its recipe: a conda yaml (`{UGP_REPO}` its clone), or uv:<repository>[:<group>] for that
+# repository's uv.lock (uv sync --locked --all-extras into the prefix)
 ENV_RECIPES:
   CALICOST_ENV: configs/envs/calicost.yaml
   NUMBAT_ENV: configs/envs/numbat.yaml
@@ -101,14 +110,56 @@ ENV_RECIPES:
   CNA_MASTE_REPRODUCIBILITY_ENV: configs/envs/cna_maste_reproducibility.yaml
 
 ##################################################
-# Method parameters
+# Fixed: the baselines' parameters per case, Universal-Genotyping-Pipeline's sample sheet and config (filled with the
+# paths above), and the cell types' markers
 CALICOST_CONFIG: configs/baselines/calicost.yaml
 NUMBAT_CONFIG: configs/baselines/numbat.yaml
 CLONALSCOPE_CONFIG: configs/baselines/clonalscope.yaml
-CNAMASTE_CONFIG: configs/cnamaste.yaml
-ANALYSIS_CONFIG: configs/analysis.yaml
-# NB: Universal-Genotyping-Pipeline's sample sheet and config, filled with the paths above
 UGP_SAMPLE_TEMPLATE: configs/templates/visium_3prime.json
 UGP_CONFIG_TEMPLATE: configs/templates/visium_3prime.ugp_preprocessing.yaml
 # NB: PanglaoDB markers through OmniPath, docs/celltyping.md
 CELLTYPING_MARKERS_URL: https://omnipathdb.org/annotations?resources=PanglaoDB&format=tsv
+
+##################################################
+# Fixed: cnamaste's parameters per case. run_cnamaste reads python/cnamaste/config/config_defaults.yaml, then `config`
+# below, then the paths and references the pipeline adds; a key left out keeps cnamaste's default.
+# zenodo_sim: cnamaste's batch_zenodo_run.sh at cleanup3, one run_cnamaste per simulation, solver and seed, with its
+#   overrides: hmrf.random_seed, hmrf.label_solver, hmm.initializer and ab_decode.decoder (lattice -> hmm_ab, calicost
+#   -> calicost); then run_cnamaste_plot of each run, and run_sim_qa of qa_solver against CalicoST and each other
+#   solver (--one_shot --overwrite, --calicost_ploidy).
+# ovarian: cnamaste's defaults, hmrf.label_solver expansion (cnamaste's alpha expansion); hmrf.lattice_type has no
+#   default, square for Visium HD's bins.
+CNAMASTE:
+  zenodo_sim:
+    # NB: <label_solver>-<initializer>-<decoder>
+    solvers:
+      - expansion-lattice-lattice
+      - expansion-calicost-calicost
+      - opengm_icm-lattice-lattice
+      - opengm_icm-calicost-calicost
+    random_seeds: [0]
+    qa_solver: expansion-lattice-lattice
+    calicost_ploidy: diploid
+    threads: 4
+    # NB: zenodo_sim_config.yaml of cnamaste at cleanup3, less its paths and references
+    config:
+      hmrf:
+        lattice_type: triangular
+        label_solver: expansion
+      hmm:
+        max_iter_em: 1
+        mstep_callback_cadence: 2
+  ovarian:
+    threads: 16
+    config:
+      hmrf:
+        lattice_type: square
+
+##################################################
+# Fixed: the analysis (scripts/analysis/) on this pipeline's runs, <OUTDIR>/configs/benchmark.yaml and config.yaml
+ANALYSIS:
+  # NB: the ovarian CalicoST run (CALICOST_CONFIG's runs) the analysis scores and draws as CalicoST's, named in the
+  #     figures by its tag's last word
+  calicost_run: "{sample}_016um_msu20"
+  # NB: the simulations' CalicoST runs scored: deposit, the deposit's nomixing_calicost_related/; rerun, this pipeline's
+  calicost_sim: deposit

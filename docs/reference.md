@@ -7,6 +7,7 @@ in [celltyping.md](celltyping.md).
 - [Environments](#environments)
 - [Configuration](#configuration)
   - [Paths and resources](#paths-and-resources)
+  - [Fixed settings](#fixed-settings)
   - [Repositories](#repositories)
   - [Method parameters](#method-parameters)
   - [Analysis](#analysis)
@@ -65,8 +66,11 @@ in [celltyping.md](celltyping.md).
 
 ## Configuration
 
-`configs/cna_maste_reproducibility.yaml` is the one config a run edits; `/path/to/` marks a value to set, and a relative
-path is under the repository. A `--configfile` given after it overrides its keys, `--config KEY=VALUE` one key.
+`configs/cna_maste_reproducibility.yaml` is the one config. Its "Set" sections are what a run sets: the `/path/to/`
+values, `CORES` and `MEM_GB`, in a copy of those sections passed with `--configfile`, whose keys override the
+default ([README](../README.md#configuration--run)). Its "Fixed" sections pin the benchmark: changing them changes
+what is run or scored. A relative path is under the repository, and
+`--config KEY=VALUE` overrides one key.
 
 ### Paths and resources
 
@@ -75,7 +79,7 @@ path is under the repository. A `--configfile` given after it overrides its keys
 | `CORES`, `MEM_GB` | The run's CPUs and memory; pass the same to `snakemake --cores <CORES> --resources mem_mb=<MEM_GB * 1024>`. |
 | `CONDA_ROOT` | Its `etc/profile.d/conda.sh` activates the method environments; its mamba builds them. |
 | `CALICOST_ZENODO_SIM_ROOT` | `CalicoST_simulation_deposit.zip` of [doi:10.5281/zenodo.14175627](https://doi.org/10.5281/zenodo.14175627), unzipped: `simulated_data_related/`, `nomixing_calicost_related/`, `numbat_related/`. |
-| `OVARIAN_SPACERANGER_ROOT`, `OVARIAN_SAMPLE_ID` | The Visium HD 3' ovarian sample's Space Ranger `outs/`, with `possorted_genome_bam.bam` (`spaceranger count --create-bam=true`) and `binned_outputs/square_016um/`; its id. |
+| `OVARIAN_SPACERANGER_ROOT` | The Visium HD 3' ovarian sample's Space Ranger `outs/`, with `possorted_genome_bam.bam` (`spaceranger count --create-bam=true`) and `binned_outputs/square_016um/`. |
 | `PATH_TO_REFDATA` | `refdata-gex-GRCh38-2024-A`, 10x's [Space Ranger downloads](https://www.10xgenomics.com/support/software/space-ranger/downloads). |
 | `PATH_TO_SNP_PANEL`, `PATH_TO_PHASE_PANEL` | UGP's SNP panel (bgzipped, tabix-indexed VCF) and phasing panel, UGP `resources/README.md` ("SNP Panels", "Population-haplotype Panels"). |
 | `PATH_TO_EAGLE_MAP` | Eagle2's hg38 genetic map, `Eagle_v2.4.1/tables/genetic_map_hg38_withX.txt.gz` ([Eagle](https://alkesgroup.broadinstitute.org/Eagle/)). |
@@ -83,9 +87,19 @@ path is under the repository. A `--configfile` given after it overrides its keys
 | `FORMAT_BB_SCRIPT`, `FORMAT_BB_PYTHON` | The script writing UGP's bins in CalicoST's input layout, and its python; null: the workflow's. |
 | `OUTDIR` | Every output ([Run layout](#run-layout)). |
 | `TMPDIR` | Temporary files; null: `<OUTDIR>/tmp`. |
-| `<METHOD>_REPO`, `REPOS` | Each clone's root, and its `url` and `rev` ([Repositories](#repositories)). |
-| `<METHOD>_ENV`, `ENV_RECIPES` | Each environment's prefix, and its recipe ([Environments](#environments)). |
-| `<METHOD>_CONFIG`, `ANALYSIS_CONFIG` | Each method's parameters per case ([Method parameters](#method-parameters)), and the analysis' ([Analysis](#analysis)). |
+| `<METHOD>_REPO` | Each clone's root. |
+| `<METHOD>_ENV` | Each environment's prefix. |
+
+### Fixed settings
+
+| Key | Description |
+|---|---|
+| `OVARIAN_SAMPLE_ID` | The ovarian sample's id, `H1-N3KXRGQ`; `scripts/metrics/runtime.py` names its runs by it. |
+| `REPOS` | Each clone's `url` and `rev` ([Repositories](#repositories)). |
+| `ENV_RECIPES` | Each environment's recipe ([Environments](#environments)). |
+| `CALICOST_CONFIG`, `NUMBAT_CONFIG`, `CLONALSCOPE_CONFIG` | The baselines' parameters per case, `configs/baselines/` ([Method parameters](#method-parameters)). |
+| `CNAMASTE` | cnamaste's parameters per case ([Method parameters](#method-parameters)). |
+| `ANALYSIS` | The CalicoST runs the analysis scores ([Analysis](#analysis)). |
 | `UGP_SAMPLE_TEMPLATE`, `UGP_CONFIG_TEMPLATE` | UGP's sample sheet and config, `configs/templates/`, filled with the paths above. |
 | `CELLTYPING_MARKERS_URL` | PanglaoDB's markers through OmniPath ([celltyping.md](celltyping.md)). |
 
@@ -112,26 +126,26 @@ A key left out keeps the method's default; each config's header cites the source
 | `configs/baselines/clonalscope.yaml` | `calicost-sim`, `ovarian` | `run_label`, `ploidy`; ovarian `bins_um`, the bin sides run. The method's arguments are fixed in `scripts/baselines/clonalscope/tutorial.R`. |
 | `configs/baselines/calicost.yaml` | `calicost-sim` | `sims` (`all`, every `numcnas*` folder of the deposit, or a list), `rects` (the initializations run at once per simulation, one core each). |
 | | `ovarian` | `mem_max` (cgroup `MemoryMax` per run; empty: `MEM_GB`), `inputs` (bin side), `runs` (tag: its input and the `configuration_cna` keys it sets; `msu<N>` sets `min_snpumi_perspot = N`), `configuration_cna` (CalicoST's default). |
-| `configs/cnamaste.yaml` | `zenodo_sim` | `solvers` (`<label_solver>-<initializer>-<decoder>`), `random_seeds`, `qa_solver`, `calicost_ploidy`, `threads`, `config` (cnamaste's `zenodo_sim_config.yaml` at `cleanup3`, less its paths and references). |
+| `CNAMASTE` | `zenodo_sim` | `solvers` (`<label_solver>-<initializer>-<decoder>`), `random_seeds`, `qa_solver`, `calicost_ploidy`, `threads`, `config` (cnamaste's `zenodo_sim_config.yaml` at `cleanup3`, less its paths and references). |
 | | `ovarian` | `threads`, `config` (`hmrf.lattice_type: square`, which has no default). |
 
 ### Analysis
 
-`ANALYSIS_CONFIG`, `configs/analysis.yaml`:
+The analysis runs on this pipeline's runs. Rule `benchmark_yaml` writes `<OUTDIR>/configs/benchmark.yaml`, the runs,
+and `config.yaml`, the references; rule `analysis_options` writes `<OUTDIR>/configs/analysis_options.yaml`, the options
+each step reads. `ANALYSIS` picks the CalicoST runs:
 
 | Key | Description |
 |---|---|
-| `benchmark_yaml`, `config_yaml` | The analysis' runs and references. null: written from this pipeline's runs, `<OUTDIR>/configs/benchmark.yaml` and `config.yaml`, so the analysis waits for every step; a path: existing runs, and the analysis runs alone. |
-| `bb_sides` | The UGP bin sides passed as `bb_dir`. |
-| `calicost_run`, `calicost_label` | The benchmark yaml's CalicoST run the figures draw, and its label, `calicost_dir` `<label>=<dir>`. |
+| `calicost_run` | The ovarian CalicoST run, a tag of `CALICOST_CONFIG`'s `runs`, the analysis scores and draws as CalicoST's; its tag's last word, e.g. `msu20`, names it in the figures. |
 | `calicost_sim` | The simulations' CalicoST runs scored: `deposit`, the deposit's `nomixing_calicost_related/`; `rerun`, this pipeline's. |
-| `options` | Any [analysis option](#analysis-options), e.g. `{cnamaste_normal_fraction: ["1=0.38"]}`. |
 
-The benchmark yaml (`benchmark_yaml`) names the runs:
+The benchmark yaml names the runs:
 
-- `vishd: <sample>:` per run key a `dir` (what the method's reader takes), `labels` and `profile`; `ugp` (`spots`,
-  the in-tissue spots; `spaceranger_dir`; `bb_dir`, a directory per bin side); `cell_type.labels`; and `runtime`, the
-  runs' runtime table. The figure step's options are read from it, so a run is swapped in one place.
+- `vishd: <sample>:` per run key a `dir` (what the method's reader takes); `ugp` (`spots`, the in-tissue spots;
+  `spaceranger_dir`; `bb_dir`, a directory per bin side); `cell_type.labels`; and `runtime`, the runs' runtime table.
+  The ovarian CalicoST runs are `calicost`, `calicost_run`, and `calicost_<tag less the sample>`. The figure step's
+  options are read from it.
 - `simulation:` `groundtruth_dir`, `runtime`, and per method a `dir` template of `{sample_id}`. Each cnamaste solver
   but `cnamaste`'s is a key `cnamaste-<solver>` with its `solver`.
 - A run key's method is the key before its first `_` or `-` (`read_method_input.get_run_method`):
@@ -139,13 +153,13 @@ The benchmark yaml (`benchmark_yaml`) names the runs:
 
 The config yaml (`config_yaml`) names `reference.bed_file`, the region bed, `data/hg38.regions.bed`, and
 `reference.refdata.gene_list.gtf_file`, the genes, `PATH_TO_REFDATA`'s `genes/genes.gtf.gz`. `data/hg38.regions.bed` and
-`data/hg38.chrom.sizes`, the chromosome arms and lengths, are copied from UGP's `resources/data/`. A relative path in
-either yaml is under the repository.
+`data/hg38.chrom.sizes`, the chromosome arms and lengths, are copied from UGP's `resources/data/`.
 
 ### Analysis options
 
 The fields of `scripts/analysis/options.py`'s `AnalysisOptions`, a list option a yaml list. The pipeline sets `sample`,
-`outdir`, `benchmark_yaml`, `config_yaml` and the figure step's inputs from the benchmark yaml; `options` sets the rest.
+`outdir`, `benchmark_yaml`, `config_yaml` and the figure step's inputs from the benchmark yaml; the others keep their
+defaults.
 
 | Option | Default | Description |
 |---|---|---|
@@ -250,7 +264,7 @@ anywhere else (`options.get_cnamaste_root`).
 
 | Rule | Runs | Writes |
 |---|---|---|
-| `analysis_options` | | `<OUTDIR>/configs/analysis_options.yaml`, every option from the analysis config and the benchmark yaml; logs the analysis checkout's commit. |
+| `analysis_options` | | `<OUTDIR>/configs/analysis_options.yaml`, the options from the benchmark yaml and `ANALYSIS`; logs the analysis checkout's commit. |
 | `analysis_simulation_metrics` | `simulation.write_simulation_metrics` | `tsvs/<simulation_dataset>.tsv.gz`, `.median.tsv.gz`, `tsvs/gene_level_cnp/`. |
 | `analysis_real_data_metrics` | `real_data.write_real_data_metrics` | `tsvs/<real_data_dataset>.tsv.gz`, `.json`, `tsvs/<sample>.*.tsv.gz`. |
 | `analysis_tables` | `tables.write_tables` | `text/` ([LaTeX tables](#latex-tables)). |
@@ -288,9 +302,7 @@ at the genes:
 > [!NOTE]
 > The pipeline passes no sweep run (`sweep_runs`, `calicost_sweep`, `false_positive_sweep`): diagnosis.pdf has no
 > sweep pages, its pages 1 and 2 hold Numbat and cnamaste, and no `cn_error.sweep` is written. The sweep's runs are in
-> `<OUTDIR>/configs/benchmark.yaml`: `calicost` (`msu20`), `calicost_016um_msu10`, `_msu15`, `_msu25` and `_msu50`. To
-> compare a cnamaste run other than `cnamaste`, set `runs`, `reference`, `cnamaste_labels` and `cnamaste_seglevel` in
-> `options`.
+> `<OUTDIR>/configs/benchmark.yaml`: `calicost` (`msu20`), `calicost_016um_msu10`, `_msu15`, `_msu25` and `_msu50`.
 
 ---
 
