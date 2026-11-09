@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "samples": [
+    {
+      "sample_id": "H1-N3KXRGQ",
+      "dataset_id": "U1",
+      "assay_type": "VISIUM3prime",
+      "sample_type": "tumor",
+      "platform": "10x Genomics Visium HD 3prime, square_016um bins",
+      "cancer_type": "ovarian cancer",
+      "reference_version": "GRCh38",
+      "files": {
+        "alignment": "/opt/ragr/datasets/Visium_HD_3prime/ovarian/10x_rawdata/outs/binned_outputs/square_016um/possorted_genome_bam.bam",
+        "alignment_index": "/opt/ragr/datasets/Visium_HD_3prime/ovarian/10x_rawdata/outs/binned_outputs/square_016um/possorted_genome_bam.bam.bai",
+        "barcodes": "/opt/ragr/datasets/Visium_HD_3prime/ovarian/10x_rawdata/outs/binned_outputs/square_016um/filtered_feature_bc_matrix/barcodes.tsv.gz",
+        "matrix_h5": "/n/fs/ragr-data/datasets/Visium_HD_3prime/10x_rawdata/ovarian/outs/binned_outputs/square_016um/filtered_feature_bc_matrix.h5",
+        "tissue_positions": "/n/fs/ragr-data/datasets/Visium_HD_3prime/10x_rawdata/ovarian/outs/binned_outputs/square_016um/spatial/tissue_positions.parquet",
+        "scalefactors": "/n/fs/ragr-data/datasets/Visium_HD_3prime/10x_rawdata/ovarian/outs/binned_outputs/square_016um/spatial/scalefactors_json.json"
+      }
+    }
+  ]
+}

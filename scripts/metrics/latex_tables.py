@@ -36,7 +36,7 @@ logger = get_logger("latex_tables", start_time=start_time)
 MISSING = "$-$"
 """A cell with no recorded value."""
 
-TEX_NOTE = r"% Written by run_benchmark.py; needs \usepackage{booktabs}."
+TEX_NOTE = r"% Written by scripts/analysis/tables.py; needs \usepackage{booktabs}."
 """The table's first line."""
 
 LATEX_ENGINE = "pdflatex"

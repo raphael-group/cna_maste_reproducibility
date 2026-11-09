@@ -1,8 +1,0 @@
-# The reference files the benchmark reads (`metrics.gene_level.read_reference_files`); a relative path is under the
-# benchmark's directory (`metrics.read_method_input.get_benchmark_path`), an absolute one read as given.
-reference:
-  bed_file: data/hg38.regions.bed
-  refdata:
-    gene_list:
-      # NB: refdata-gex-GRCh38-2024-A's genes/genes.gtf.gz: GENCODE v44 primary assembly genes, as Cell Ranger mkref 8.0.0 filtered them (reference.json).
-      gtf_file: input_data/reference/genes.gtf.gz

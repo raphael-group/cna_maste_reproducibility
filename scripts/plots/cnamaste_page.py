@@ -135,16 +135,16 @@ def get_cnamaste_input_mismatch(labels: Path, seglevel: Path) -> str:
     same run directory as they are.
 
     Args:
-        labels: `--cnamaste_labels`.
-        seglevel: `--cnamaste_seglevel`.
+        labels: `cnamaste_labels`.
+        seglevel: `cnamaste_seglevel`.
 
     Returns:
         The mismatch, or "" where there is none.
     """
     if not labels.name.startswith("clone_labels_int.tsv"):
-        return f"--cnamaste_labels {labels}: a run's integer clones, clone_labels_int.tsv[.gz], wanted"
+        return f"cnamaste_labels {labels}: a run's integer clones, clone_labels_int.tsv[.gz], wanted"
     if seglevel.resolve().parent != labels.resolve().parent:
-        return f"--cnamaste_seglevel {seglevel} is not in the run directory of --cnamaste_labels, {labels.parent}"
+        return f"cnamaste_seglevel {seglevel} is not in the run directory of cnamaste_labels, {labels.parent}"
     return ""
 
 
@@ -191,7 +191,7 @@ def get_normal_fractions(run_dir: Path, clones: list[int], given: dict[int, floa
     Args:
         run_dir: the run's directory.
         clones: its integer clones, each the id of the fitted clone naming it.
-        given: clone -> its normal fraction, `--cnamaste_normal_fraction`'s, or empty to read the log.
+        given: clone -> its normal fraction, `cnamaste_normal_fraction`'s, or empty to read the log.
 
     Returns:
         Each clone's normal fraction, clone 0 first.

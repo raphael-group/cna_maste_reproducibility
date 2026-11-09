@@ -1,0 +1,35 @@
+# cnamaste's parameters per case. run_cnamaste reads python/cnamaste/config/config_defaults.yaml, then `config` below,
+# then the paths and references run_cna_maste_reproducibility.smk adds; a key left out keeps cnamaste's default.
+#
+# Runpeng Luo (2026-11-08)
+#
+# zenodo_sim: cnamaste's batch_zenodo_run.sh at cleanup3, one run_cnamaste per simulation, solver and seed, with its
+#   overrides: hmrf.random_seed, hmrf.label_solver, hmm.initializer and ab_decode.decoder (lattice -> hmm_ab, calicost
+#   -> calicost); then run_cnamaste_plot of each run, and run_sim_qa of qa_solver against CalicoST and each other
+#   solver (--one_shot --overwrite, --calicost_ploidy).
+# ovarian: cnamaste's defaults, hmrf.label_solver expansion (cnamaste's alpha expansion); hmrf.lattice_type has no
+#   default, square for Visium HD's bins.
+zenodo_sim:
+  # NB: <label_solver>-<initializer>-<decoder>
+  solvers:
+    - expansion-lattice-lattice
+    - expansion-calicost-calicost
+    - opengm_icm-lattice-lattice
+    - opengm_icm-calicost-calicost
+  random_seeds: [0]
+  qa_solver: expansion-lattice-lattice
+  calicost_ploidy: diploid
+  threads: 4
+  # NB: zenodo_sim_config.yaml of cnamaste at cleanup3, less its paths and references
+  config:
+    hmrf:
+      lattice_type: triangular
+      label_solver: expansion
+    hmm:
+      max_iter_em: 1
+      mstep_callback_cadence: 2
+ovarian:
+  threads: 16
+  config:
+    hmrf:
+      lattice_type: square

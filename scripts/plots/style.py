@@ -7,7 +7,7 @@ letters, and a page of rows of panels laid out tight.
 - `get_run_order`, `get_ordered_runs` -- a sample's runs in method order;
 - `pop_titles`, `add_panel_letters` -- each panel's letter alone, its title kept for the page naming every panel;
 - `get_panel_rows`, `put_key_under`, `set_axes_height`, `get_bar_positions` -- a page of rows of panels laid out
-  tight (`docs/figure-rule.md` FP-5), its key moved under them, its height set by its panels', and a group's bars side
+  tight (lab figure rule FP-5), its key moved under them, its height set by its panels', and a group's bars side
   by side.
 
 Every box, bar and key patch of a metric figure is in its method's fill (`get_method_fill`), its colour at
@@ -273,7 +273,7 @@ def get_panel_rows(rows: int, columns: int = 2, sharex: bool = False, key_lines:
     """Get a page of `rows` rows of `columns` panels, the text column wide, `PANEL_ROW` a row and `KEY_LINE` a line of
     the key under them, laid out by
     matplotlib's constrained layout, each panel padded `GAP` left and right and `LETTER` above and below, past its
-    labels, so a panel's letter (`add_panel_letters`) fits over it (`docs/figure-rule.md` FP-5); a page taller than the
+    labels, so a panel's letter (`add_panel_letters`) fits over it (lab figure rule FP-5); a page taller than the
     text block less its caption (`page_size("full")`) is logged.
 
     Args:

@@ -333,7 +333,7 @@ def get_run_comparison_panels(
     named by its method where each method has one run, else as `get_run_label` names it.
 
     Args:
-        runs: `run`, `method` and `resolution` per run, `run_benchmark.write_real_data_metrics`' wide table.
+        runs: `run`, `method` and `resolution` per run, `analysis.real_data`'s wide table.
         pairs: metric -> its table of every two runs, `run_a`, `run_b` and the metric, a key of `RUN_PAIR_METRICS`.
         errors: `run`, `method` and `ss_<channel>` per run scored on the copy-number error.
 

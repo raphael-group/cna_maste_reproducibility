@@ -1,0 +1,21 @@
+# The analysis step: the four steps of scripts/analysis/ on the runs of run_cna_maste_reproducibility.smk.
+#
+# Runpeng Luo (2026-11-08)
+#
+# benchmark_yaml, config_yaml: the analysis' runs and references (scripts/analysis/options.py). null: written from
+#   this pipeline's runs, <OUTDIR>/configs/benchmark.yaml and config.yaml, so the analysis waits for every step
+#   before it. A path, relative to this repository: existing runs, and the analysis runs alone.
+# The figure step's inputs are read from benchmark_yaml's vishd.<OVARIAN_SAMPLE_ID>: ugp.spaceranger_dir, ugp.spots,
+#   ugp.bb_dir at bb_sides, cell_type.labels, cnamaste.labels and .profile, <calicost_run>.dir as
+#   <calicost_label>=<dir>, numbat.dir, clonalscope.dir. The pipeline writes them, with `options`, to
+#   <OUTDIR>/configs/analysis_options.yaml, which each step reads.
+benchmark_yaml: null
+config_yaml: null
+bb_sides: [16, 32]
+calicost_run: calicost
+calicost_label: msu20
+# NB: the simulations' CalicoST runs scored: deposit, the deposit's nomixing_calicost_related; rerun, this pipeline's
+calicost_sim: deposit
+# NB: further analysis options, a field of scripts/analysis/options.py's AnalysisOptions each, e.g.
+#     {cnamaste_normal_fraction: ["1=0.38"]}
+options: {}

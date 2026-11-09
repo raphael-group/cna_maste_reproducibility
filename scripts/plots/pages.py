@@ -79,7 +79,7 @@ DROPPED_CLASSES = (("6.3", 5e7), ("3.3", 5e7))
 
 PAGE_PAD = 0.02
 """Inches of white kept round a page cropped to its content: the lab saves a figure with `bbox_inches="tight"`, and
-LaTeX places a PDF by its bounding box (`docs/figure-rule.md` MP-3, LF-3)."""
+LaTeX places a PDF by its bounding box (lab figure rules MP-3, LF-3)."""
 
 
 SAVE_OPTIONS = {"dpi": DPI, "facecolor": "white", "bbox_inches": "tight", "pad_inches": PAGE_PAD}
@@ -99,8 +99,8 @@ def get_calicost_label(directory: Path, label: str, ploidy: str, fallbacks: list
     Args:
         directory: the run's or its sample's directory.
         label: its sweep label, empty for none.
-        ploidy: the table asked for, `--calicost_ploidy`.
-        fallbacks: `--calicost_fallback_ploidy`, in order.
+        ploidy: the table asked for, `calicost_ploidy`.
+        fallbacks: `calicost_fallback_ploidy`, in order.
 
     Returns:
         The label, e.g. `min-snp-umi: 10, diploid`.
@@ -221,14 +221,14 @@ def plot_metric_pages(
     """Draw the appendix's metric figures from their tables under `outdir`, a page each (`simulation`,
     `run_comparison`).
 
-    With `real_data_metrics`, the sample's runs against the reference run, `run_benchmark.write_real_data_metrics`' wide table
+    With `real_data_metrics`, the sample's runs against the reference run, `analysis.real_data`'s wide table
     and detail tables: their proportion of cells per altered state (`plot_genome_composition`), then each run's state
     Jaccard index against the reference run's, from their confusion (`plot_cna_jaccard`), the runs in method order
     (`style.get_run_order`), each run named by its method and the side of the bins it ran on, the wide table's
     `resolution` (`style.get_run_labels`), each page labelled its paper figure's name (`PAGE_NAMES`). Then the first
     `simulation_metrics` table's runtime and memory at `SIMULATION_LEVEL` (`plot_simulation_resources`,
     `read_simulation_levels`) and, where it holds two or more cnamaste solvers, their metrics less `DROPPED_CLASSES`
-    (`plot_solver_ablation`), `run_benchmark.write_simulation_metrics`', each labelled its paper figure's name; the
+    (`plot_solver_ablation`), `analysis.simulation`'s, each labelled its paper figure's name; the
     tables' metrics are combined.pdf's (`plot_simulation_pages`).
 
     Args:

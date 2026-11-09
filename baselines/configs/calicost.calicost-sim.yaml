@@ -1,7 +1,0 @@
-# CalicoST on the CalicoST simulations with the deposit's own configfile0..4 (nomixing_calicost_related/<sim>/);
-# only input, output and resource paths are remapped (scripts/calicost/repro.sh).
-dataset: calicost-sim
-out_root: /n/fs/ragr-data/datasets/cnamaste-benchmark/benchmark/calicost_repro
-sims: all            # NB: "all" = every numcnas* folder under the dataset's sim_dir, or a list
-rects: [0, 1, 2, 3, 4]
-max_jobs: 8          # NB: simulations in parallel; each runs its rects concurrently, one core each

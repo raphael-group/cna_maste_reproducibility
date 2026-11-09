@@ -100,9 +100,9 @@ def read_simulation_config(benchmark_yaml: Path) -> dict[str, Any]:
     """Read the simulations' entry of a benchmark yaml.
 
     Args:
-        benchmark_yaml: a benchmark yaml, e.g. `configs/benchmark.local.yaml`, its `simulation`: `groundtruth_dir`, a
-            directory per simulation; `runtime`, a `simulation.runtime.tsv`; per method, `dir`, a template of a run's
-            directory in its `{sample_id}`.
+        benchmark_yaml: a benchmark yaml, e.g. the pipeline's `<OUTDIR>/configs/benchmark.yaml`, its `simulation`:
+            `groundtruth_dir`, a directory per simulation; `runtime`, a `simulation.runtime.tsv`; per method, `dir`, a
+            template of a run's directory in its `{sample_id}`.
 
     Returns:
         The entry, each path absolute (`read_method_input.get_yaml_paths`).

@@ -1,4 +1,4 @@
-"""A sample's runs compared without a truth (`run_benchmark.write_real_data_metrics`): each run's clones and CNA states against
+"""A sample's runs compared without a truth (`analysis.real_data`): each run's clones and CNA states against
 a reference run's, its calls per broad cell type, and its copies against its clones' pseudobulk counts.
 
 - `get_key_label`, `read_sample_entry` -- a run key's label, and a sample's entry of the benchmark yaml;

@@ -174,7 +174,7 @@ FALSE_POSITIVE = "False-positive tumor"
 SPOT_IMAGE_REPEAT = 5
 """Pixels a side a spot's cell is stored at in a spatial panel's image (`draw_spot_image`), so the image's pixels an inch
 are this many times the panel's spots an inch, toward the 600 the lab asks of a bitmap of many points
-(`benchmark/docs/figure-rule.md` FX-3)."""
+(lab figure rule FX-3)."""
 
 FALSE_POSITIVE_COLOUR = "#2a78d6"
 """A false-positive tumor spot's colour: OKLab dE >= 20 from clone I and II's and light grey under protan, deutan and

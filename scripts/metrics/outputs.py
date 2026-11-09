@@ -27,23 +27,23 @@ from cnamaste.logger import get_logger
 logger = get_logger("outputs", start_time=start_time)
 
 TABLE_DIR = "tsvs"
-"""The tables' directory under an `--outdir`."""
+"""The tables' directory under an `outdir`."""
 
 PLOT_DIR = "plots"
-"""The figures' directory under an `--outdir`."""
+"""The figures' directory under an `outdir`."""
 
 PAGE_DIR = "pdf-pages"
-"""The directory of each figure's pages, a PDF apiece, under an `--outdir`."""
+"""The directory of each figure's pages, a PDF apiece, under an `outdir`."""
 
 TEXT_DIR = "text"
-"""The LaTeX tables' directory under an `--outdir`."""
+"""The LaTeX tables' directory under an `outdir`."""
 
 
 def get_table_dir(outdir: Path) -> Path:
     """Get the tables' directory, `<outdir>/tsvs`.
 
     Args:
-        outdir: a script's `--outdir`.
+        outdir: the analysis' `outdir`.
 
     Returns:
         The directory.
@@ -55,7 +55,7 @@ def get_table_path(outdir: Path, name: str) -> Path:
     """Get a table's path, `<outdir>/tsvs/<name>.tsv.gz`.
 
     Args:
-        outdir: a script's `--outdir`.
+        outdir: the analysis' `outdir`.
         name: the table's name, e.g. `simulation_metrics`.
 
     Returns:
@@ -68,7 +68,7 @@ def get_plot_dir(outdir: Path) -> Path:
     """Get the figures' directory, `<outdir>/plots`.
 
     Args:
-        outdir: a script's `--outdir`.
+        outdir: the analysis' `outdir`.
 
     Returns:
         The directory.
@@ -80,7 +80,7 @@ def get_plot_path(outdir: Path, name: str) -> Path:
     """Get a figure's path, `<outdir>/plots/<name>`.
 
     Args:
-        outdir: a script's `--outdir`.
+        outdir: the analysis' `outdir`.
         name: the figure's file name, e.g. `appendix.pdf`.
 
     Returns:
@@ -93,7 +93,7 @@ def get_page_path(outdir: Path, name: str, page: int, label: str = "") -> Path:
     """Get a figure's page alone, `<outdir>/pdf-pages/<stem>-P<page>.pdf`, or `<label>.pdf` for a labelled page.
 
     Args:
-        outdir: a script's `--outdir`.
+        outdir: the analysis' `outdir`.
         name: the figure's file name, e.g. `combined.pdf`.
         page: the page, from 1.
         label: the page's own name, e.g. `main-fig-cnp-compare`, or empty for none.
@@ -108,7 +108,7 @@ def get_text_path(outdir: Path, name: str) -> Path:
     """Get a LaTeX table's path, `<outdir>/text/<name>.tex`.
 
     Args:
-        outdir: a script's `--outdir`.
+        outdir: the analysis' `outdir`.
         name: the tables' name, e.g. `table`.
 
     Returns:
@@ -121,7 +121,7 @@ def get_json_path(outdir: Path, name: str) -> Path:
     """Get a summary's path, `<outdir>/tsvs/<name>.json`, beside its table.
 
     Args:
-        outdir: a script's `--outdir`.
+        outdir: the analysis' `outdir`.
         name: the summary's name, e.g. `ovarian`.
 
     Returns:

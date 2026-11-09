@@ -22,7 +22,7 @@ agreement on each state.
 
 The CNP similarity compares clone profiles alone, no spot: of two runs' clones `i` and `j`, at the genes both call and
 at least one calls other than `neu`, `A_ij`, the share where their CNA states match, `J_ij`; of the two runs, the
-highest `J_ij` over their clone pairs (`docs/metrics.md`, CNP similarity). `J_ij` is the Jaccard index of the two
+highest `J_ij` over their clone pairs (`docs/reference.md`, CNP similarity). `J_ij` is the Jaccard index of the two
 clones' altered genes (Jaccard 1912, https://doi.org/10.1111/j.1469-8137.1912.tb05611.x), a gene both alter shared only
 where their states match.
 """

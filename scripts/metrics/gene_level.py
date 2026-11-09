@@ -58,9 +58,9 @@ def read_reference_files(config_yaml: Path) -> tuple[Path, Path]:
     """Read the region bed and the genes' GTF a benchmark config names.
 
     Args:
-        config_yaml: a benchmark config, e.g. `configs/config.local.yaml`: `reference.bed_file`, the region bed, and
-            `reference.refdata.gene_list.gtf_file`, the reference's genes, each relative to the benchmark's directory
-            or absolute (`read_method_input.get_benchmark_path`).
+        config_yaml: a benchmark config, e.g. the pipeline's `<OUTDIR>/configs/config.yaml`: `reference.bed_file`,
+            the region bed, and `reference.refdata.gene_list.gtf_file`, the reference's genes, each relative to the
+            benchmark's directory or absolute (`read_method_input.get_benchmark_path`).
 
     Returns:
         The bed and the GTF.

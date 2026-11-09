@@ -1,7 +1,7 @@
 """The benchmark's metrics as LaTeX text, `text/<name>.tex` and its PDF (`write_metric_text`): a paragraph per metric,
 defined as `simulation_metrics` and `real_data_metrics` compute it, each followed by a `% shown in:` line naming the
 pages and panels that draw it, a paper figure's page by its name (`plots.pages.PAGE_NAMES`), another by its PDF and
-page, `diagnosis-P<k>`, as `run_benchmark.sh` writes them, or `text/table.tex`.
+page, `diagnosis-P<k>`, as `analysis.figures` writes them, or `text/table.tex`.
 
 - `get_metric_texts` -- each metric's paragraph: its name, its dataset, its table columns, its definition and the
   pages drawing it;
@@ -26,7 +26,7 @@ from cnamaste.logger import get_logger
 
 logger = get_logger("metric_text", start_time=start_time)
 
-TEX_NOTE = r"% Written by run_benchmark.py; needs \usepackage{amsmath,amssymb}."
+TEX_NOTE = r"% Written by scripts/analysis/tables.py; needs \usepackage{amsmath,amssymb}."
 """The fragment's first line."""
 
 DATASETS = {"simulation": "Simulations", "real_data": "Real data"}

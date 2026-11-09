@@ -56,7 +56,7 @@ CN_ERROR_AXES_HEIGHT = 1.8
 
 
 def get_copy_number_rows(wide: pd.DataFrame) -> pd.DataFrame:
-    """Get the runs of `run_benchmark.write_real_data_metrics`' wide table scored on the copy-number error: those whose profile
+    """Get the runs of `analysis.real_data`'s wide table scored on the copy-number error: those whose profile
     gives copies, a count of RDR bins scored.
 
     Args:

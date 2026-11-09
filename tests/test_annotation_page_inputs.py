@@ -1,4 +1,4 @@
-"""The inputs `scripts/run_benchmark.py` converts: Visium HD bins given to their finer
+"""The inputs the analysis (`scripts/analysis/`) converts: Visium HD bins given to their finer
 bins and placed on the image (`platforms.visium`), a Numbat run's clones and clone profile
 (`scripts/metrics/read_method_input.py`), spots drawn as lattice cells (`layout.draw_spot_image`), and
 segments on cnplot's arms as `(A,B)` states in cnamaste's colours (`layout.get_cnplot_segments`, `layout.get_copy_states`).

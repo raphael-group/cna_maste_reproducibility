@@ -117,7 +117,7 @@ per bin side."""
 
 
 def get_benchmark_dir() -> Path:
-    """Get the benchmark's directory, `BENCHMARK`: it holds `scripts/`, `configs/`, `data/` and `input_data/`."""
+    """Get the benchmark's directory, `BENCHMARK`: it holds `scripts/`, `configs/`, `data/` and `tmp/input_data/`."""
     return BENCHMARK
 
 

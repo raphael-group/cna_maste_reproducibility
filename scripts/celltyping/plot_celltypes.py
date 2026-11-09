@@ -4,7 +4,7 @@
 Author (2026-11-04)
 
 Dependencies:
-    python 3.11, scanpy 1.11, anndata 0.12, pandas, numpy, matplotlib 3.11 (environment.yaml)
+    python 3.11, scanpy 1.11, anndata 0.12, pandas, numpy, matplotlib 3.11 (configs/envs/celltyping.yaml)
 
 Usage:
     python plot_celltypes.py <out_dir> --scalefactors FILE [--figures-dir DIR]
@@ -42,7 +42,7 @@ Outputs (figures dir):
     dotplot__10x_top_features.pdf: Space Ranger top features of each cluster.
     matrixplot__ulm_top_celltypes.pdf: mean ULM score of each cluster's top-ranked cell types.
 Notes/References:
-    Rules: ../../docs/figure-rule.md. Text is Computer Modern (cmr10, MP-1), saved as TrueType (pdf.fonttype 42,
+    Rules: the lab's figure rules, by ID. Text is Computer Modern (cmr10, MP-1), saved as TrueType (pdf.fonttype 42,
     MP-3), FONT_SIZE throughout and LABEL_SIZE for axis labels (FA-2, FL-2, MP-5); keys sit below the dot plots and
     spatial maps, right of the UMAPs and matrix plot (FL-1); bins, > 10K points, are rasterized at DPI and the text
     stays vector (FX-3); pages are cropped, at most PAGE_WIDTH by PAGE_HEIGHT (FP-5).

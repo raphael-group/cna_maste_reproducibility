@@ -1,6 +1,0 @@
-# Clonalscope on the CalicoST simulations; every numcnas* folder under the dataset's sim_dir.
-# Method arguments are fixed in scripts/clonalscope/tutorial.R (Visium tumor_spots_tutorial).
-dataset: calicost-sim
-outdir: /n/fs/ragr-data/datasets/cnamaste-benchmark/benchmark/clonalscope
-run_label: visium_tutorial
-ploidy: 2

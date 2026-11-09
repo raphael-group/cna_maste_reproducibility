@@ -1,0 +1,114 @@
+# Every path and resource of run_cna_maste_reproducibility.smk, the one configuration a run edits.
+#
+# Runpeng Luo (2026-11-08)
+#
+# A relative path is under this repository. /path/to/ marks a value to set. The setup step checks the inputs, clones
+# a missing repository at its revision (REPOS), and builds a missing environment from its recipe (ENV_RECIPES); an
+# existing repository is checked against its revision and left as it is.
+
+##################################################
+# Resources of the whole run; pass the same numbers to snakemake: --cores <CORES> --resources mem_mb=<MEM_GB * 1024>
+CORES: 32
+MEM_GB: 256
+# NB: conda root, its etc/profile.d/conda.sh activates the method environments and its mamba builds them
+CONDA_ROOT: /path/to/miniconda3
+
+##################################################
+# Inputs
+# NB: CalicoST_simulation_deposit.zip of https://doi.org/10.5281/zenodo.14175627, unzipped: simulated_data_related/,
+#     nomixing_calicost_related/, numbat_related/
+CALICOST_ZENODO_SIM_ROOT: /path/to/CalicoST_simulation_deposit
+# NB: Space Ranger outs/ of the Visium HD 3' ovarian sample (10x Genomics), with possorted_genome_bam.bam
+#     (spaceranger count --create-bam=true) and binned_outputs/square_016um/
+OVARIAN_SPACERANGER_ROOT: /path/to/outs
+OVARIAN_SAMPLE_ID: H1-N3KXRGQ
+# NB: refdata-gex-GRCh38-2024-A, https://www.10xgenomics.com/support/software/space-ranger/downloads
+#     (https://cf.10xgenomics.com/supp/cell-exp/refdata-gex-GRCh38-2024-A.tar.gz, unpacked)
+PATH_TO_REFDATA: /path/to/refdata-gex-GRCh38-2024-A
+# NB: SNP panel (bgzipped, tabix-indexed VCF) and phasing panel, Universal-Genotyping-Pipeline resources/README.md
+#     "SNP Panels" and "Population-haplotype Panels" (1kGP n=3,202 hg38: resources/scripts/process_1kGP_3202_panel.sh)
+PATH_TO_SNP_PANEL: /path/to/1kGP_3202_hg38/snps.vcf.gz
+PATH_TO_PHASE_PANEL: /path/to/1kGP_3202_hg38/phasing_panel
+# NB: Eagle2's hg38 genetic map, Eagle_v2.4.1/tables/genetic_map_hg38_withX.txt.gz (https://alkesgroup.broadinstitute.org/Eagle/)
+PATH_TO_EAGLE_MAP: /path/to/Eagle_v2.4.1/tables/genetic_map_hg38_withX.txt.gz
+# NB: gene symbol -> Ensembl ID of the reference the simulations were built on, Cell Ranger GRCh38-2020-A
+#     genes/ordered_genes.tsv (Gene, Ensembl_id, ...); scripts/baselines/common/h5ad_to_10x.py
+PATH_TO_ORDERED_GENES: /path/to/refdata-gex-GRCh38-2020-A/genes/ordered_genes.tsv
+# NB: UGP bins -> CalicoST's input layout (bb-016um-formatted/), and its python; rule ovarian_format_bb
+FORMAT_BB_SCRIPT: /path/to/format_bb.py
+FORMAT_BB_PYTHON: null  # NB: null = CNA_MASTE_REPRODUCIBILITY_ENV's python
+
+##################################################
+# Outputs: <OUTDIR>/{zenodo_sim,ovarian}/<method>/, <OUTDIR>/benchmark_results/, <OUTDIR>/logs/
+OUTDIR: /path/to/outdir
+TMPDIR: null  # NB: null = <OUTDIR>/tmp
+
+##################################################
+# Repositories: root of each clone
+CALICOST_REPO: /path/to/repos/CalicoST
+NUMBAT_REPO: /path/to/repos/numbat
+CLONALSCOPE_REPO: /path/to/repos/Clonalscope
+CNAMASTE_REPO: /path/to/repos/cna_maste
+# NB: cnamaste at the commit the analysis (scripts/metrics, scripts/plots) imports from
+CNAMASTE_ANALYSIS_REPO: /path/to/repos/cna_maste_analysis
+UGP_REPO: /path/to/repos/Universal-Genotyping-Pipeline
+
+# NB: repository -> url and revision, a commit or a branch
+REPOS:
+  CALICOST_REPO:
+    url: https://github.com/raphael-group/CalicoST
+    rev: c1abcae3e3657e01e547ee4529e3b9d039221453  # NB: main
+  NUMBAT_REPO:
+    # NB: Numbat runs from bioconda r-numbat 1.5.2 (CRAN); GitHub has no v1.5.2 tag, this commit sets Version: 1.5.2
+    url: https://github.com/kharchenkolab/numbat
+    rev: 54d8268f3d14bd6afaa6784eeb839db7479a8947
+  CLONALSCOPE_REPO:
+    # NB: main, package version 1.1.0; installed into CLONALSCOPE_ENV from this clone
+    url: https://github.com/seasoncloud/Clonalscope
+    rev: 07dd0c576b6754d18dda86ec8905d8a9be5e77b0
+  CNAMASTE_REPO:
+    # NB: private; cloning needs read access and a git holding GitHub credentials
+    url: https://github.com/michaelJwilson/cna_maste.git
+    rev: cleanup3
+  CNAMASTE_ANALYSIS_REPO:
+    url: https://github.com/michaelJwilson/cna_maste.git
+    rev: 42b96ff
+  UGP_REPO:
+    url: https://github.com/raphael-group/Universal-Genotyping-Pipeline
+    rev: c5c0b9b9ccb84268f4d29f9840dd91b71d793d7d
+
+##################################################
+# Environments: prefix of each
+CALICOST_ENV: /path/to/envs/calicost_env
+NUMBAT_ENV: /path/to/envs/numbat_env
+CLONALSCOPE_ENV: /path/to/envs/clonalscope_env
+CNAMASTE_ENV: /path/to/envs/cnamaste_env
+CNAMASTE_ANALYSIS_ENV: /path/to/envs/cnamaste_analysis_env
+UNIVERSAL_GENOTYPING_PIPELINE_ENV: /path/to/envs/universal-genotyping-env
+CELLTYPING_ENV: /path/to/envs/celltyping_env
+CNA_MASTE_REPRODUCIBILITY_ENV: /path/to/envs/cna_maste_reproducibility
+
+# NB: environment -> its recipe: a conda yaml (`{UGP_REPO}` its clone), or uv:<repository>[:<group>] for that
+#     repository's uv.lock (uv sync --locked --all-extras into the prefix)
+ENV_RECIPES:
+  CALICOST_ENV: configs/envs/calicost.yaml
+  NUMBAT_ENV: configs/envs/numbat.yaml
+  CLONALSCOPE_ENV: configs/envs/clonalscope.yaml
+  CNAMASTE_ENV: uv:CNAMASTE_REPO
+  CNAMASTE_ANALYSIS_ENV: uv:CNAMASTE_ANALYSIS_REPO:luo
+  UNIVERSAL_GENOTYPING_PIPELINE_ENV: "{UGP_REPO}/environment.yaml"
+  CELLTYPING_ENV: configs/envs/celltyping.yaml
+  CNA_MASTE_REPRODUCIBILITY_ENV: configs/envs/cna_maste_reproducibility.yaml
+
+##################################################
+# Method parameters
+CALICOST_CONFIG: configs/baselines/calicost.yaml
+NUMBAT_CONFIG: configs/baselines/numbat.yaml
+CLONALSCOPE_CONFIG: configs/baselines/clonalscope.yaml
+CNAMASTE_CONFIG: configs/cnamaste.yaml
+ANALYSIS_CONFIG: configs/analysis.yaml
+# NB: Universal-Genotyping-Pipeline's sample sheet and config, filled with the paths above
+UGP_SAMPLE_TEMPLATE: configs/templates/visium_3prime.json
+UGP_CONFIG_TEMPLATE: configs/templates/visium_3prime.ugp_preprocessing.yaml
+# NB: PanglaoDB markers through OmniPath, docs/celltyping.md
+CELLTYPING_MARKERS_URL: https://omnipathdb.org/annotations?resources=PanglaoDB&format=tsv
