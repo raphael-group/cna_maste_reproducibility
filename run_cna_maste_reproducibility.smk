@@ -356,7 +356,6 @@ def required_inputs():
             "PATH_TO_PHASE_PANEL",
             "PATH_TO_EAGLE_MAP",
             "PATH_TO_ORDERED_GENES",
-            "FORMAT_BB_SCRIPT",
         )
     ]
     found += [("CONDA_ROOT", f"{CONDA}/etc/profile.d/conda.sh")]
@@ -760,17 +759,17 @@ rule ovarian_spatial_016um:
 rule ovarian_format_bb:
     input:
         f"{SETUP}/inputs.ok",
+        f"{SETUP}/CELLTYPING_ENV.ok",
         h5ad=UGP_OUTPUTS["h5ad"],
         spatial=rules.ovarian_spatial_016um.output[0],
     output:
         directory(BB16),
     log:
         f"{LOGS}/prepare/ovarian_format_bb.log",
-    params:
-        python=C.get("FORMAT_BB_PYTHON") or PY,
     shell:
-        "{params.python} {C[FORMAT_BB_SCRIPT]} --bb-dir {UGP_DIR}/bb --assay VISIUM3prime --out-dir {output} "
-        "--spatial {DATASET_ID}={input.spatial} --barcode-mappings {OUTS}/barcode_mappings.parquet > {log} 2>&1"
+        "{ENVS[CELLTYPING_ENV]}/bin/python {REPO}/scripts/utils/format_bb.py --bb-dir {UGP_DIR}/bb "
+        "--assay VISIUM3prime --out-dir {output} --spatial {DATASET_ID}={input.spatial} "
+        "--barcode-mappings {OUTS}/barcode_mappings.parquet > {log} 2>&1"
 
 
 rule ovarian_cnamaste_sample_sheet:

@@ -51,7 +51,7 @@ in [celltyping.md](celltyping.md).
 | `CNAMASTE_ENV` | `uv:CNAMASTE_REPO` | cnamaste at `cleanup3`: `run_cnamaste`, `run_cnamaste_plot`, `run_sim_qa`. |
 | `CNAMASTE_ANALYSIS_ENV` | `uv:CNAMASTE_ANALYSIS_REPO:luo` | The analysis step and the tests: cnamaste at `42b96ff`, its `luo` group adding cnplot. |
 | `UNIVERSAL_GENOTYPING_PIPELINE_ENV` | `{UGP_REPO}/environment.yaml` | Universal-Genotyping-Pipeline (UGP) on the ovarian sample. |
-| `CELLTYPING_ENV` | `configs/envs/celltyping.yaml` | The cell types. |
+| `CELLTYPING_ENV` | `configs/envs/celltyping.yaml` | The cell types; `scripts/utils/format_bb.py`. |
 
 > [!IMPORTANT]
 > - The analysis imports cnamaste at `42b96ff` and the runs use `cleanup3`: `scripts/metrics/` and `scripts/plots/`
@@ -85,7 +85,6 @@ what is run or scored. A relative path is under the repository, and
 | `PATH_TO_SNP_PANEL`, `PATH_TO_PHASE_PANEL` | UGP's SNP panel (bgzipped, tabix-indexed VCF) and phasing panel, UGP `resources/README.md` ("SNP Panels", "Population-haplotype Panels"). |
 | `PATH_TO_EAGLE_MAP` | Eagle2's hg38 genetic map, `Eagle_v2.4.1/tables/genetic_map_hg38_withX.txt.gz` ([Eagle](https://alkesgroup.broadinstitute.org/Eagle/)). |
 | `PATH_TO_ORDERED_GENES` | Cell Ranger GRCh38-2020-A `genes/ordered_genes.tsv`: the simulations' gene symbols to Ensembl IDs. |
-| `FORMAT_BB_SCRIPT`, `FORMAT_BB_PYTHON` | The script writing UGP's bins in CalicoST's input layout, and its python; null: the workflow's. |
 | `OUTDIR` | Every output ([Run layout](#run-layout)). |
 | `TMPDIR` | Temporary files; null: `<OUTDIR>/tmp`. |
 | `<METHOD>_REPO` | Each clone's root. |
@@ -204,7 +203,7 @@ A target runs the steps up to it: `snakemake -s run_cna_maste_reproducibility.sm
 | Target | Rules |
 |---|---|
 | `setup` | `check_inputs` (every input path); `clone_repo` (a missing repository cloned, an existing one checked); `build_env` (a missing environment built). |
-| `prepare` | Per simulation: its 10x matrix, Numbat count matrix and allele counts, and cnamaste sample sheet. On the ovarian sample: a 16 um BAM where Space Ranger has none (UGP's `convert_bam_visium3prime.py`, `ovarian_bam_016um`); UGP's genotyping, phasing and 16 um bins (`ugp_ovarian`); then Numbat's 32 um counts and allele counts, the bins in CalicoST's layout (`ovarian_format_bb`) and cnamaste's sample sheet. Clonalscope's references; the sample's cell types (`celltyping_ovarian`). |
+| `prepare` | Per simulation: its 10x matrix, Numbat count matrix and allele counts, and cnamaste sample sheet. On the ovarian sample: a 16 um BAM where Space Ranger has none (UGP's `convert_bam_visium3prime.py`, `ovarian_bam_016um`); UGP's genotyping, phasing and 16 um bins (`ugp_ovarian`); then Numbat's 32 um counts and allele counts, the bins in CalicoST's layout (`ovarian_format_bb`, `scripts/utils/format_bb.py`) and cnamaste's sample sheet. Clonalscope's references; the sample's cell types (`celltyping_ovarian`). |
 | `run_methods` | Numbat, Clonalscope and CalicoST per case and sample ([Baselines](#baselines)); cnamaste ([cnamaste](#cnamaste)); the runtime tables (`sim_runtime`, `vishd_runtime`). |
 | `analysis` | The four steps of `scripts/analysis/` ([Analysis step](#analysis-step)). |
 
@@ -688,6 +687,7 @@ with 0.02 in of white round it (`plots.pages.SAVE_OPTIONS`): a paper figure's pa
 | `scripts/platforms/visium.py` | Visium HD square bins: barcodes read as grid places, placed on the image, given to finer bins. |
 | `scripts/baselines/` | The baselines' programs ([Baselines](#baselines)). |
 | `scripts/celltyping/` | The cell types ([celltyping.md](celltyping.md)). |
+| `scripts/utils/format_bb.py` | UGP's bins in CalicoST's input layout, CalicoST's and cnamaste's ovarian input (rule `ovarian_format_bb`). |
 
 ---
 

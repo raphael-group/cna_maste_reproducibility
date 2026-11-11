@@ -43,9 +43,6 @@ PATH_TO_EAGLE_MAP: /path/to/Eagle_v2.4.1/tables/genetic_map_hg38_withX.txt.gz
 # NB: gene symbol -> Ensembl ID of the reference the simulations were built on, Cell Ranger GRCh38-2020-A
 #     genes/ordered_genes.tsv (Gene, Ensembl_id, ...); scripts/baselines/common/h5ad_to_10x.py
 PATH_TO_ORDERED_GENES: /path/to/refdata-gex-GRCh38-2020-A/genes/ordered_genes.tsv
-# NB: UGP bins -> CalicoST's input layout (bb-016um-formatted/), and its python; rule ovarian_format_bb
-FORMAT_BB_SCRIPT: /path/to/format_bb.py
-FORMAT_BB_PYTHON: null  # NB: null = CNA_MASTE_REPRODUCIBILITY_ENV's python
 
 ##################################################
 # Set: outputs, <OUTDIR>/{zenodo_sim,ovarian}/<method>/, <OUTDIR>/benchmark_results/, <OUTDIR>/logs/
