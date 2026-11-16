@@ -3,8 +3,8 @@
 - `get_metric_columns` -- the table's columns;
 - `get_no_call` -- a run that calls no CNV;
 - `read_simulation_config`, `get_simulation_methods` -- the simulations' entry of a benchmark yaml, and its methods;
-- `get_run_dir`, `read_simulation_run` -- a method's run of one simulation, Numbat's run that found no CNV as a call of
-  none;
+- `get_run_dir`, `read_simulation_run` -- a method's run of one simulation and its `run` status (`RUN_STATUS`),
+  Numbat's run that found no CNV as a call of none;
 - `get_run_metrics` -- one run's metrics and spot coverage, on its segments or at the genes;
 - `read_runtime` -- each run's runtime and memory;
 - `get_simulation_metrics` -- every simulation's run of each method, one row each, and its gene-level table;
@@ -15,7 +15,8 @@ On its segments, a run's cells are its spots on its own segments (`qa.metrics`);
 inside the regions, the gene taking the segment, and the true segment, that overlaps it most
 (`metrics.gene_level.get_gene_profile`). `spot-coverage-rate` is `#called` / `#spots`, the truth's spots the run
 labels with any clone, normal or tumor, as the real data's (`metrics.qc_metrics.get_coverage`), one value at both
-levels.
+levels. `run` says why a row has no metrics: a run the workflow lists as `failed` (it stopped with an error) is not
+read; a run with no output is left unscored.
 
 A method's key in the simulations' entry is a method, or a method then `-` and a variant, read by the method's reader
 (`read_method_input.get_run_method`), e.g. `cnamaste-opengm_icm-lattice-lattice`; a key's `solver`, cnamaste's
@@ -58,6 +59,10 @@ RUNTIME = ("Runtime [mins]", "Memory [GB]")
 LEVELS = ("segment", "gene")
 """The rows a run is scored on: its own segments, or the genes inside the regions."""
 
+RUN_STATUS = ("scored", "no CNV", "failed", "no output")
+"""A run's `run` column: scored; Numbat's stop on finding no CNV, scored as a call of none; listed in its method's
+`failed`, not read; or no output, left unscored."""
+
 NUMBAT_NO_CNV = "No CNV remains"
 """The start of the message Numbat's `run_numbat` logs and returns where it stops on finding no CNV (R/main.R)."""
 
@@ -69,7 +74,7 @@ def get_runtime_columns() -> tuple[str, str]:
 
 def get_metric_columns() -> tuple[str, ...]:
     """Get the table's columns: the run, the level it is scored at, its spots and spot coverage rate, the supervised
-    metrics, then `RUNTIME`."""
+    metrics, `RUNTIME`, then its `run` status (`RUN_STATUS`)."""
     return (
         "sample_id",
         "method",
@@ -80,6 +85,7 @@ def get_metric_columns() -> tuple[str, ...]:
         "spot-coverage-rate",
         *get_supervised_metrics(),
         *RUNTIME,
+        "run",
     )
 
 
@@ -102,7 +108,8 @@ def read_simulation_config(benchmark_yaml: Path) -> dict[str, Any]:
     Args:
         benchmark_yaml: a benchmark yaml, e.g. the pipeline's `<OUTDIR>/configs/benchmark.yaml`, its `simulation`:
             `groundtruth_dir`, a directory per simulation; `runtime`, a `simulation.runtime.tsv`; per method, `dir`, a
-            template of a run's directory in its `{sample_id}`.
+            template of a run's directory in its `{sample_id}`, and optionally `failed`, the simulations whose run
+            stopped with an error.
 
     Returns:
         The entry, each path absolute (`read_method_input.get_yaml_paths`).
@@ -148,9 +155,11 @@ def get_run_dir(simulation: dict[str, Any], method: str, sample_id: str) -> Path
     return found[0] if found else path
 
 
-def read_simulation_run(simulation: dict[str, Any], method: str, sample_id: str, truth: Truth) -> MethodInput | None:
+def read_simulation_run(
+    simulation: dict[str, Any], method: str, sample_id: str, truth: Truth
+) -> tuple[MethodInput | None, str]:
     """Read a method's run of one simulation (`read_method_input.get_method_reader`); a Numbat run that stopped finding
-    no CNV (`NUMBAT_NO_CNV`) as a call of none (`get_no_call`).
+    no CNV (`NUMBAT_NO_CNV`) as a call of none (`get_no_call`); a run its method lists as `failed` not read.
 
     Args:
         simulation: `read_simulation_config`'s entry.
@@ -159,19 +168,22 @@ def read_simulation_run(simulation: dict[str, Any], method: str, sample_id: str,
         truth: its truth.
 
     Returns:
-        The run, or None where it wrote no output, logged.
+        The run, or None where it failed or wrote no output, logged; and its `run` status (`RUN_STATUS`).
     """
+    if sample_id in simulation[method].get("failed", []):
+        logger.warning(f"{sample_id} {method}: the run failed, left unscored.")
+        return None, "failed"
     run_dir = get_run_dir(simulation, method, sample_id)
     log = run_dir / "log.txt"
     stopped = not any(run_dir.glob("clone_post_*.tsv")) and log.is_file() and NUMBAT_NO_CNV in log.read_text()
     if method == "numbat" and stopped:
         logger.info(f"{sample_id} numbat: {NUMBAT_NO_CNV}, scored as a call of none.")
-        return get_no_call(truth)
+        return get_no_call(truth), "no CNV"
     try:
-        return get_method_reader(get_run_method(method))(run_dir)
+        return get_method_reader(get_run_method(method))(run_dir), "scored"
     except FileNotFoundError as error:
         logger.warning(f"{sample_id} {method}: no output, left unscored ({error}).")
-        return None
+        return None, "no output"
 
 
 def get_run_metrics(run: MethodInput, truth: Truth, genes: pd.DataFrame | None = None) -> dict[str, Any]:
@@ -230,17 +242,23 @@ def get_simulation_metrics(
 
     Returns:
         One row per simulation and method, `get_metric_columns()`, its `level` `gene` with `genes`, else `segment`; a
-        run with no output NaN but for its runtime.
+        failed run or one with no output NaN but for its runtime and `run`.
     """
     rows = []
     for truth_dir in sorted(p for p in Path(simulation["groundtruth_dir"]).iterdir() if p.is_dir()):
         truth = read_truth(truth_dir)
         runs = {}
         for method in methods:
-            run = read_simulation_run(simulation, method, truth_dir.name, truth)
+            run, status = read_simulation_run(simulation, method, truth_dir.name, truth)
             found = get_run_metrics(run, truth, genes) if run is not None else {}
             rows.append(
-                {"sample_id": truth_dir.name, "method": method, "solver": simulation[method].get("solver"), **found}
+                {
+                    "sample_id": truth_dir.name,
+                    "method": method,
+                    "solver": simulation[method].get("solver"),
+                    **found,
+                    "run": status,
+                }
             )
             if run is not None:
                 runs[method] = run
@@ -278,7 +296,7 @@ def get_level_metrics() -> tuple[str, ...]:
 
 def merge_levels(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
     """Merge each level's table into one wide table, a row per simulation and method: `sample_id`, `method`, `solver`,
-    `#spots`, `#called`, `spot-coverage-rate`, each level's metrics (`get_level_column`), then `RUNTIME`.
+    `#spots`, `#called`, `spot-coverage-rate`, each level's metrics (`get_level_column`), `RUNTIME`, then `run`.
 
     Args:
         tables: each level's table (`get_simulation_metrics`), by level, its rows in one order.
@@ -287,17 +305,17 @@ def merge_levels(tables: dict[str, pd.DataFrame]) -> pd.DataFrame:
         The wide table.
 
     Raises:
-        ValueError: where the levels' runs, spots or runtime differ.
+        ValueError: where the levels' runs, spots, runtime or status differ.
     """
-    shared = ["sample_id", "method", "solver", "#spots", "#called", "spot-coverage-rate", *RUNTIME]
+    shared = ["sample_id", "method", "solver", "#spots", "#called", "spot-coverage-rate", *RUNTIME, "run"]
     first = next(iter(tables.values()))[shared].reset_index(drop=True)
     scored = []
     for level, table in tables.items():
         if not table[shared].reset_index(drop=True).equals(first):
-            raise ValueError(f"the {level} table's runs, spots or runtime differ from the first level's")
+            raise ValueError(f"the {level} table's runs, spots, runtime or status differ from the first level's")
         metrics = table[list(get_level_metrics())].reset_index(drop=True)
         scored.append(metrics.rename(columns=lambda column, level=level: get_level_column(column, level)))
-    return pd.concat([first[shared[:6]], *scored, first[list(RUNTIME)]], axis=1)
+    return pd.concat([first[shared[:6]], *scored, first[[*RUNTIME, "run"]]], axis=1)
 
 
 def get_level_table(wide: pd.DataFrame, level: str) -> pd.DataFrame:

@@ -44,7 +44,7 @@ in [celltyping.md](celltyping.md).
 
 | Environment | Recipe | Runs |
 |---|---|---|
-| `CNA_MASTE_REPRODUCIBILITY_ENV` | `configs/envs/cna_maste_reproducibility.yaml` | Snakemake 9, pyyaml, pandas, pysam, uv, git: the workflow, its config writers, `convert_bam_visium3prime.py`, the runtime tables. |
+| `CNA_MASTE_REPRODUCIBILITY_ENV` | `configs/envs/cna_maste_reproducibility.yaml` | Snakemake 9, pyyaml, pandas, pysam, uv, git: the workflow, its config writers, `convert_bam_visium3prime.py`, the runtime tables; Rust, gcc 13 and Boost headers: cnamaste's solver libraries (gcc 14 and later reject OpenGM's templates). |
 | `CALICOST_ENV` | `configs/envs/calicost.yaml` | CalicoST, installed editable from `CALICOST_REPO`; the simulations' 10x matrices. |
 | `NUMBAT_ENV` | `configs/envs/numbat.yaml` | Numbat, bioconda `r-numbat` 1.5.2 (CRAN). |
 | `CLONALSCOPE_ENV` | `configs/envs/clonalscope.yaml` | Clonalscope, installed from `CLONALSCOPE_REPO`. |
@@ -77,7 +77,7 @@ what is run or scored. A relative path is under the repository, and
 | Key | Description |
 |---|---|
 | `CORES`, `MEM_GB` | The run's CPUs and memory; pass the same to `snakemake --cores <CORES> --resources mem_mb=<MEM_GB * 1024>`. |
-| `BASELINE_LIMITS` | Each baseline run's hard limits: `max_walltime`, a GNU `timeout` duration, default `24h`; `max_rss`, a systemd user scope's `MemoryMax` with swap off, default `512G` ([Baselines](#baselines)). |
+| `BASELINE_LIMITS` | Each baseline run's hard limits: `max_walltime`, a GNU `timeout` duration, default `48h`; `max_rss`, a systemd user scope's `MemoryMax` with swap off, default `512G` ([Baselines](#baselines)). |
 | `CONDA_ROOT` | Its `etc/profile.d/conda.sh` activates the method environments; its mamba builds them. |
 | `CALICOST_ZENODO_SIM_ROOT` | `CalicoST_simulation_deposit.zip` of [doi:10.5281/zenodo.14175627](https://doi.org/10.5281/zenodo.14175627), unzipped: `simulated_data_related/`, `nomixing_calicost_related/`, `numbat_related/`. |
 | `OVARIAN_SPACERANGER_ROOT` | The Visium HD 3' ovarian sample's Space Ranger `outs/`, with `possorted_genome_bam.bam` (`spaceranger count --create-bam=true`) and `binned_outputs/square_016um/`. |
@@ -89,6 +89,7 @@ what is run or scored. A relative path is under the repository, and
 | `TMPDIR` | Temporary files; null: `<OUTDIR>/tmp`. |
 | `<METHOD>_REPO` | Each clone's root. |
 | `<METHOD>_ENV` | Each environment's prefix. |
+| `CNAMASTE_EXPANSION_HOME`, `CNAMASTE_OPENGM_HOME` | cnamaste's native solver libraries, `libcnamaste_expansion.so` and `libcnamaste_opengm.so`, each in its directory; the setup step builds a missing one (`build_cnamaste_expansion`, `build_cnamaste_opengm`), and cnamaste's runs read them from these variables. |
 
 ### Fixed settings
 
@@ -138,7 +139,7 @@ each step reads. `ANALYSIS` picks the CalicoST runs:
 | Key | Description |
 |---|---|
 | `calicost_run` | The ovarian CalicoST run, a tag of `CALICOST_CONFIG`'s `runs`, the analysis scores and draws as CalicoST's; its tag's last word, e.g. `msu20`, names it in the figures. |
-| `calicost_sim` | The simulations' CalicoST runs scored: `deposit`, the deposit's `nomixing_calicost_related/`; `rerun`, this pipeline's. |
+| `calicost_sim` | The simulations' CalicoST runs scored: `deposit`, the deposit's `nomixing_calicost_related/`, and CalicoST is not run on the simulations; `rerun`, this pipeline's `calicost_sim` runs. |
 
 The benchmark yaml names the runs:
 
@@ -198,11 +199,11 @@ defaults.
 
 ## Steps
 
-A target runs the steps up to it: `snakemake -s run_cna_maste_reproducibility.smk ... <target>`.
+A target runs the steps up to it: `snakemake <target> -s run_cna_maste_reproducibility.smk ...`.
 
 | Target | Rules |
 |---|---|
-| `setup` | `check_inputs` (every input path); `clone_repo` (a missing repository cloned, an existing one checked); `build_env` (a missing environment built). |
+| `setup` | `check_inputs` (every input path); `clone_repo` (a missing repository cloned, an existing one checked); `build_env` (a missing environment built); `build_cnamaste_expansion`, `build_cnamaste_opengm` (a missing cnamaste solver library built with `CNA_MASTE_REPRODUCIBILITY_ENV`'s toolchain, by `CNAMASTE_REPO`'s `infra/expansion/build_expansion.sh` and `infra/opengm/build_opengm.sh`, OpenGM cloned at the commit the latter pins and `libstdc++` linked in statically; an existing one kept; each checked by cnamaste's own `require`). |
 | `prepare` | Per simulation: its 10x matrix, Numbat count matrix and allele counts, and cnamaste sample sheet. On the ovarian sample: a 16 um BAM where Space Ranger has none (UGP's `convert_bam_visium3prime.py`, `ovarian_bam_016um`); UGP's genotyping, phasing and 16 um bins (`ugp_ovarian`); then Numbat's 32 um counts and allele counts, the bins in CalicoST's layout (`ovarian_format_bb`, `scripts/utils/format_bb.py`) and cnamaste's sample sheet. Clonalscope's references; the sample's cell types (`celltyping_ovarian`). |
 | `run_methods` | Numbat, Clonalscope and CalicoST per case and sample ([Baselines](#baselines)); cnamaste ([cnamaste](#cnamaste)); the runtime tables (`sim_runtime`, `vishd_runtime`). |
 | `analysis` | The four steps of `scripts/analysis/` ([Analysis step](#analysis-step)). |
@@ -221,11 +222,11 @@ per step and sample, in its own environment, running a program of `scripts/basel
 | `sim_numbat_allele_counts` | | The deposit's `numbat_allele_counts.tsv.gz`, as the deposit ran Numbat. |
 | `ovarian_numbat_aggregate_bins` | `numbat/aggregate_bins.R` | The 16 um matrix and UGP's 16 um pileup summed into 32 um bins. |
 | `ovarian_numbat_allele_counts` | `numbat/build_allele_counts.R` | Allele counts from that pileup and UGP's phasing (`numbat:::preprocess_allele`). |
-| `numbat_run`, `numbat_postprocess` | `numbat/run.R`, `numbat/postprocess.py` | `run_numbat()`, then `<sample>.RNA.cells.tsv` and `cluster_states.tsv`. |
+| `numbat_run`, `numbat_postprocess` | `numbat/run.R`, `numbat/postprocess.py` | `run_numbat()`, then `<sample>.RNA.cells.tsv` and `cluster_states.tsv`; header-only `cells.tsv` where Numbat found no CNV (`No CNV remains` in its `log.txt`) or stopped with an error (`FAILED rc=<rc>` in its `.status`). |
 | `clonalscope_refs` | `clonalscope/build_refs_clonalscope.sh` | 200 kb bins, arm segments and `data-raw/` at Clonalscope's commit, shared by both cases. |
 | `clonalscope_aggregate_matrix` | `common/aggregate_10x_matrix.R` | A coarser bin's matrix, the 16 um matrix summed. |
-| `clonalscope_run`, `clonalscope_decode_states` | `clonalscope/tutorial.R`, `clonalscope/decode_states.R` | The Visium tumor_spots_tutorial, then per-cluster copies. |
-| `calicost_sim` | `calicost/repro.sh` | CalicoST on one simulation with the deposit's configfiles. |
+| `clonalscope_run`, `clonalscope_decode_states` | `clonalscope/tutorial.R`, `clonalscope/decode_states.R` | The Visium tumor_spots_tutorial, then per-cluster copies; a run that stops with an error writes a header-only `cells.tsv` and `FAILED rc=<rc>` to its `.status`. |
+| `calicost_sim` | `calicost/repro.sh` | CalicoST on one simulation with the deposit's configfiles; run only with `ANALYSIS.calicost_sim: rerun`; a run that stops with an error writes `FAILED rc=<rc>` to its `.status` and is left unscored. |
 | `calicost_stage_input`, `calicost_ovarian` | `calicost/stage_input.sh`, `calicost/ovarian_config.py`, `calicost/run.sh` | UGP's formatted bins staged; one ovarian run's `configuration_cna`, run under a cgroup `MemoryMax`. |
 
 | Method | Tutorial followed | Run |
@@ -241,7 +242,7 @@ per step and sample, in its own environment, running a program of `scripts/basel
 > [!WARNING]
 > Each baseline's run rule, `numbat_run`, `clonalscope_run`, `calicost_sim` (a simulation's whole job) and
 > `calicost_ovarian`, runs its program through `common/limit.sh`: GNU `timeout` at `max_walltime` inside a systemd
-> user scope with `MemoryMax` at `max_rss` (`BASELINE_LIMITS`). A run over either limit is stopped and its rule fails;
+> user scope with `MemoryMax` at `max_rss` (`BASELINE_LIMITS`). A run over either limit is stopped and its rule fails, even where a run that stops with an error does not;
 > the `.status` file beside its log has the exit code, 124 for the wall time or 137 for memory, and the limit.
 
 Diagnostics, run by hand with their paths as arguments: `calicost/compare_repro.py` (a CalicoST rerun against the
@@ -252,10 +253,10 @@ deposit's CalicoST, Numbat and STARCH labels and profiles).
 
 | Rule | Runs |
 |---|---|
-| `cnamaste_sim` | `run_cnamaste` per simulation, solver and seed, as cnamaste's `batch_zenodo_run.sh` runs each job: `-o hmrf.random_seed`, `hmrf.label_solver`, `hmm.initializer` and `ab_decode.decoder` (`lattice` -> `hmm_ab`, `calicost` -> `calicost`), into `nomixing_cnamaste_related/<sim>/<solver>/run_<id>/`. |
+| `cnamaste_sim` | `run_cnamaste` per simulation, solver and seed, as cnamaste's `batch_zenodo_run.sh` runs each job: `-o hmrf.random_seed`, `hmrf.label_solver`, `hmm.initializer` and `ab_decode.decoder` (`lattice` -> `hmm_ab`, `calicost` -> `calicost`), into `nomixing_cnamaste_related/<sim>/<solver>/run_<id>/`; a run that stops with an error leaves an empty `run_id.seed<seed>.txt` and `FAILED rc=<rc>` in its log, and is skipped by `cnamaste_sim_plot`, left out by `run_sim_qa` and left unscored. |
 | `cnamaste_sim_plot` | `run_cnamaste_plot` of each run. |
 | `cnamaste_sim_qa` | `run_sim_qa` of `qa_solver` against CalicoST and each other solver (`--one_shot --overwrite --calicost_ploidy`). |
-| `cnamaste_ovarian`, `cnamaste_ovarian_plot` | `run_cnamaste` on the sample at cnamaste's defaults (`hmrf.label_solver: expansion`, alpha expansion), then `run_cnamaste_plot`. |
+| `cnamaste_ovarian`, `cnamaste_ovarian_plot` | `run_cnamaste` on the sample with cnamaste's `config.yaml` at cleanup3, less its paths and references (`hmrf.label_solver: expansion`, alpha expansion), then `run_cnamaste_plot`. A failed run fails its rule: the ovarian figures and tables need its outputs. |
 | `cnamaste_ovarian_binned_data` | `scripts/baselines/cnamaste/write_binned_data.py`: the run's `binned_data.npz`, which the cnamaste page reads and `cleanup3` no longer writes. |
 
 ### Analysis step
@@ -581,6 +582,7 @@ The simulations' wide table, each metric per level (`simulation_metrics.merge_le
 | `#spots`, `#called`, `spot-coverage-rate` | The truth's spots, those the run labels, and `#called` / `#spots`. |
 | `<metric> (segment)`, `<metric> (gene)` | [Against the truth](#against-the-truth-simulations), on the run's own segments and at the genes. |
 | `Runtime [mins]`, `Memory [GB]` | Its `runtime` row. |
+| `run` | `scored`; `no CNV`, Numbat's stop on finding no CNV, scored as a call of none; `failed`, a simulation in its method's `failed` (the benchmark yaml: the run stopped with an error, `FAILED` in its last `.status` or log); `no output`, no run output found. A `failed` or `no output` row has no metrics. |
 
 The sample's wide table, a row per `runs` in order, each column once (`real_data_metrics.merge_run_tables`): a column
 two tables hold must agree on every run, and a count, `#<name>`, is an integer, NA where a table has no row of the run.

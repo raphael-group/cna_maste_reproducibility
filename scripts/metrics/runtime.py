@@ -9,7 +9,7 @@ Functions (run_cna_maste_reproducibility.smk rules sim_runtime and vishd_runtime
         bench_out, the simulations' output root (numbat/, clonalscope/, cnamaste/); deposit_numbat_dir, the
         deposit's numbat_related/.
     write_vishd_runtime(bench_out, log_dir, out_tsv): bench_out, the Visium HD sample's output root (clonalscope/,
-        numbat/); log_dir, the baseline logs (CalicoST /usr/bin/time -v files).
+        numbat/, cnamaste/); log_dir, the baseline logs (CalicoST /usr/bin/time -v files).
 
 Inputs:
     simulation:
@@ -22,6 +22,8 @@ Inputs:
         numbat: <bench_out>/numbat/bench/run_numbat.H1-N3KXRGQ[.<run_label>].tsv
         clonalscope visium_tutorial: <bench_out>/clonalscope/bench/run_tutorial.<s>.visium_tutorial.tsv
         calicost: <log_dir>/calicost_<tag>.time.txt
+        cnamaste: <bench_out>/cnamaste/bench/run_cnamaste.H1-N3KXRGQ.tsv, 16 um bins, its setting the run id of
+            <bench_out>/cnamaste/run_id.txt (real_data_metrics.get_run_runtime finds it in the run's run_<id>)
 Outputs:
     simulation out_tsv: simulation_id, method, Runtime [mins], Memory [GB]; simulation_metrics.read_runtime reads it.
     vishd out_tsv: method, setting, resolution [um], Runtime [mins], Memory [GB], source; the benchmark yaml's
@@ -181,6 +183,8 @@ def write_vishd_runtime(out: str, log_dir: str, out_tsv: str) -> None:
                 [f"{cb}/run_tutorial.{s}.visium_tutorial.tsv"],
             )
         )
+    with open(f"{out}/cnamaste/run_id.txt") as f:
+        runs.append(("cnamaste", f.read().strip(), 16, [f"{out}/cnamaste/bench/run_cnamaste.{S16}.tsv"]))
     rows = []
     for method, setting, res, files in runs:
         rt, mem = snakemake_bench(files)

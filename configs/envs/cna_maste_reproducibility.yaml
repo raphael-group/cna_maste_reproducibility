@@ -17,3 +17,8 @@ dependencies:
   - uv=0.13.7
   - git=2.56.0
   - curl=8.23.0
+  # NB: cnamaste's native solvers (build_cnamaste_expansion, build_cnamaste_opengm); gcc 14+ rejects OpenGM's templates
+  - rust=1.100.0
+  - gcc=13.4.0
+  - gxx=13.4.0
+  - libboost-headers=1.92.0

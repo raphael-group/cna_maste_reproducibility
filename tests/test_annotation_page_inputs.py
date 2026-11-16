@@ -277,16 +277,19 @@ def test_cnamaste_inputs_are_one_runs_integer_clones() -> None:
 
 def test_cnamaste_normal_fractions_are_its_logs_unless_given(tmp_path: Path) -> None:
     """Each integer clone takes the logged fraction of the fitted clone naming it, clone 0 held at 1; fractions given
-    on the command line replace the log's; a clone the log leaves out is refused."""
+    on the command line replace the log's; a clone the log leaves out is refused; run_cnamaste_plot's log is not read."""
     pytest.importorskip("cnplot", reason="cnplot is in the luo dependency group: uv sync --group luo")
     from scripts.plots.cnamaste_page import get_normal_fractions
 
     line = (
         "INFO - run_integer_copy_decoding:1258 - hmm_ab normal fractions per clone: [1.0, 0.45, 0.0, 0.36], status {}."
     )
-    (tmp_path / "cnamaste_x.log").write_text(f"start\n{line}\nDone\n")
+    run = tmp_path / "run_x"
+    run.mkdir()
+    (run / "cnamaste_x.log").write_text(f"start\n{line}\nDone\n")
+    (run / "cnamaste_plot_x.log").write_text("start\nDone\n")
 
-    assert get_normal_fractions(tmp_path, [0, 1], {}) == {0: 1.0, 1: 0.45}
-    assert get_normal_fractions(tmp_path, [0, 1], {1: 0.3}) == {0: 1.0, 1: 0.3}
+    assert get_normal_fractions(run, [0, 1], {}) == {0: 1.0, 1: 0.45}
+    assert get_normal_fractions(run, [0, 1], {1: 0.3}) == {0: 1.0, 1: 0.3}
     with pytest.raises(ValueError, match="none of clone"):
-        get_normal_fractions(tmp_path, [0, 4], {})
+        get_normal_fractions(run, [0, 4], {})

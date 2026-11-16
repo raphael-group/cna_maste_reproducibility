@@ -21,6 +21,7 @@ from scripts.metrics.simulation_metrics import (
     get_metric_columns,
     get_run_dir,
     merge_levels,
+    read_simulation_run,
 )
 from scripts.metrics.supervised_metrics import (
     compute_supervised_metrics,
@@ -106,9 +107,10 @@ def test_levels_merge_into_one_wide_table_and_back() -> None:
                     10,
                     8,
                     0.8,
-                    *([value] * (len(columns) - 9)),
+                    *([value] * (len(columns) - 10)),
                     2.0,
                     np.nan,
+                    "scored",
                 ]
             ],
             columns=columns,
@@ -141,3 +143,11 @@ def test_run_dir_pattern_finds_the_one_run(tmp_path: Path) -> None:
     (run.parent / "run_20439582").mkdir()
     with pytest.raises(ValueError, match="2 runs"):
         get_run_dir(simulation, "cnamaste", "sim1")
+
+
+def test_failed_run_is_not_read_and_missing_run_is_unscored(tmp_path: Path) -> None:
+    """A run its method lists as `failed` is `failed`, even with output on disk; one with no output is `no output`."""
+    simulation = {"clonalscope": {"dir": str(tmp_path / "{sample_id}" / "postprocess"), "failed": ["sim1"]}}
+    (tmp_path / "sim1" / "postprocess").mkdir(parents=True)
+    assert read_simulation_run(simulation, "clonalscope", "sim1", None) == (None, "failed")
+    assert read_simulation_run(simulation, "clonalscope", "sim2", None) == (None, "no output")

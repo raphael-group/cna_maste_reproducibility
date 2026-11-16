@@ -14,10 +14,10 @@
 CORES: 32
 MEM_GB: 256
 # NB: hard limits of each baseline run (Numbat, Clonalscope, CalicoST; scripts/baselines/common/limit.sh): wall time,
-#     a GNU timeout duration <N>[s|m|h|d], default 24h; memory, a systemd user scope's MemoryMax <N>[K|M|G|T] with
+#     a GNU timeout duration <N>[s|m|h|d], default 48h; memory, a systemd user scope's MemoryMax <N>[K|M|G|T] with
 #     swap off, default 512G. A run over either is stopped and its rule fails.
 BASELINE_LIMITS:
-  max_walltime: 24h
+  max_walltime: 48h
   max_rss: 512G
 # NB: conda root, its etc/profile.d/conda.sh activates the method environments and its mamba builds them
 CONDA_ROOT: /path/to/miniconda3
@@ -69,6 +69,12 @@ CNAMASTE_ANALYSIS_ENV: /path/to/envs/cnamaste_analysis_env
 UNIVERSAL_GENOTYPING_PIPELINE_ENV: /path/to/envs/universal-genotyping-env
 CELLTYPING_ENV: /path/to/envs/celltyping_env
 CNA_MASTE_REPRODUCIBILITY_ENV: /path/to/envs/cna_maste_reproducibility
+
+##################################################
+# Set: the directory of each cnamaste solver library; the setup step builds a missing one (CNAMASTE_REPO's
+# infra/expansion/build_expansion.sh, infra/opengm/build_opengm.sh) and keeps an existing one
+CNAMASTE_EXPANSION_HOME: /path/to/cnamaste_deps/expansion
+CNAMASTE_OPENGM_HOME: /path/to/cnamaste_deps/opengm
 
 ##################################################
 # Fixed: the ovarian sample's id (scripts/metrics/runtime.py names its runs by it)
@@ -130,8 +136,8 @@ CELLTYPING_MARKERS_URL: https://omnipathdb.org/annotations?resources=PanglaoDB&f
 #   overrides: hmrf.random_seed, hmrf.label_solver, hmm.initializer and ab_decode.decoder (lattice -> hmm_ab, calicost
 #   -> calicost); then run_cnamaste_plot of each run, and run_sim_qa of qa_solver against CalicoST and each other
 #   solver (--one_shot --overwrite, --calicost_ploidy).
-# ovarian: cnamaste's defaults, hmrf.label_solver expansion (cnamaste's alpha expansion); hmrf.lattice_type has no
-#   default, square for Visium HD's bins.
+# ovarian: config.yaml of cnamaste at cleanup3 (its Visium HD run), less its paths and references; hmrf.label_solver
+#   expansion (cnamaste's alpha expansion), hmrf.lattice_type square for Visium HD's bins.
 CNAMASTE:
   zenodo_sim:
     # NB: <label_solver>-<initializer>-<decoder>
@@ -154,9 +160,27 @@ CNAMASTE:
         mstep_callback_cadence: 2
   ovarian:
     threads: 16
+    # NB: config.yaml of cnamaste at cleanup3, less its paths and references
     config:
+      quality:
+        phasing_min_snp_umis: 150
+        spot_min_snp_umis: 25
+        secondary_min_snp_umi: 300
+      phasing:
+        npart_phasing: 2
+        clone_init_type: rectangle
       hmrf:
+        spatial_weight: 1.0
+        label_solver: expansion
         lattice_type: square
+      hmm:
+        max_iter_em: 1
+        mstep_callback_cadence: 2
+      ab_decode:
+        clone_coupling: 0.5
+        int_clone_agreement: 0.95
+      betabinom:
+        start_disp: 20.0
 
 ##################################################
 # Fixed: the analysis (scripts/analysis/) on this pipeline's runs, <OUTDIR>/configs/benchmark.yaml and config.yaml
@@ -164,5 +188,6 @@ ANALYSIS:
   # NB: the ovarian CalicoST run (CALICOST_CONFIG's runs) the analysis scores and draws as CalicoST's, named in the
   #     figures by its tag's last word
   calicost_run: "{sample}_016um_msu20"
-  # NB: the simulations' CalicoST runs scored: deposit, the deposit's nomixing_calicost_related/; rerun, this pipeline's
+  # NB: the simulations' CalicoST runs scored: deposit, the deposit's nomixing_calicost_related/ (CalicoST not run);
+  #     rerun, this pipeline's calicost_sim runs
   calicost_sim: deposit

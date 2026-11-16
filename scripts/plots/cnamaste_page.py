@@ -197,14 +197,15 @@ def get_normal_fractions(run_dir: Path, clones: list[int], given: dict[int, floa
         Each clone's normal fraction, clone 0 first.
 
     Raises:
-        ValueError: where `given` is empty and the directory holds other than one `cnamaste_*.log`, the log other than
-            one line of the fractions, or the line no fraction of a clone.
+        ValueError: where `given` is empty and the directory, `run_<id>`, holds no `cnamaste_<id>.log` (not
+            `cnamaste_plot_<id>.log`, `run_cnamaste_plot`'s), the log other than one line of the fractions, or the line
+            no fraction of a clone.
     """
     if given:
         return {0: NORMAL_CLONE_FRACTION, **given}
-    logs = sorted(run_dir.glob("cnamaste_*.log"))
-    if len(logs) != 1:
-        raise ValueError(f"{run_dir} holds {len(logs)} cnamaste_*.log, one wanted")
+    logs = [run_dir / f"cnamaste_{run_dir.name.removeprefix('run_')}.log"]
+    if not logs[0].is_file():
+        raise ValueError(f"{run_dir} holds no {logs[0].name}")
     lines = [line for line in logs[0].read_text().splitlines() if NORMAL_FRACTION_LOG in line]
     if len(lines) != 1:
         raise ValueError(f"{logs[0]} logs {len(lines)} lines of {NORMAL_FRACTION_LOG!r}, one wanted")

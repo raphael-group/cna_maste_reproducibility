@@ -8,7 +8,7 @@
 #   timeout, systemd user scopes for the baseline runs' BASELINE_LIMITS).
 #
 # Usage:
-#   snakemake -s run_cna_maste_reproducibility.smk --cores <CORES> --resources mem_mb=<MEM_GB * 1024> [target ...] \
+#   snakemake [target ...] -s run_cna_maste_reproducibility.smk --cores <CORES> --resources mem_mb=<MEM_GB * 1024> \
 #       [--configfile <yaml>] [--config KEY=VALUE ...]
 #           target  # all (default) | setup | prepare | run_methods | analysis, or any rule's output
 #
@@ -89,6 +89,12 @@ if not re.fullmatch(r"\d+[KMGT]?", MAX_RSS):
 
 REPOS = {key: under_repo(C[key]) for key in C["REPOS"]}
 ENVS = {key: under_repo(C[key]) for key in C["ENV_RECIPES"]}
+# NB: cnamaste's native solver builds, each the directory its library is in
+NATIVE = {
+    "CNAMASTE_EXPANSION_HOME": "libcnamaste_expansion.so",
+    "CNAMASTE_OPENGM_HOME": "libcnamaste_opengm.so",
+}
+NATIVE_HOMES = {key: under_repo(C[key]) for key in NATIVE}
 CALICOST = read_yaml(C["CALICOST_CONFIG"])
 NUMBAT = read_yaml(C["NUMBAT_CONFIG"])
 CLONALSCOPE = read_yaml(C["CLONALSCOPE_CONFIG"])
@@ -200,11 +206,17 @@ def in_env(env):
 
 
 IN_CLONALSCOPE = in_env("CLONALSCOPE_ENV")
+# NB: this workflow's own environment activated: its compilers' and Rust's activation scripts set CXX and the linker
+IN_RUNNER = f"source {CONDA}/etc/profile.d/conda.sh && set +u && conda activate {sys.prefix} && set -u && "
+IN_NUMBAT = in_env("NUMBAT_ENV")
 
 
 def limited(status):
     """A shell prefix running a baseline's command under BASELINE_LIMITS, its START and END lines to `status`."""
-    return f"bash {BASELINES}/common/limit.sh {MAX_WALLTIME} {MAX_RSS} {status} "
+    return f"{LIMIT} {status} "
+
+
+LIMIT = f"bash {BASELINES}/common/limit.sh {MAX_WALLTIME} {MAX_RSS}"
 
 
 # NB: what CalicoST's scripts read: their configs, conda, a python with pyyaml and numpy >= 2, and the logs' directory
@@ -221,7 +233,11 @@ def clonalscope_matrix(case, sample):
 
 
 def baseline_outputs(case, method):
-    """A method's last outputs on `case`, one per sample or run."""
+    """A method's last outputs on `case`, one per sample or run.
+
+    CalicoST on the simulations runs only with ANALYSIS calicost_sim `rerun`; with `deposit` the analysis reads the
+    deposit's nomixing_calicost_related/ and nothing is run.
+    """
     if method == "numbat":
         label = NUMBAT[CASES[case]]["run_label"]
         return [f"{OUT}/{case}/numbat/postprocess/{label}/{s}/{s}.RNA.cells.tsv" for s in NUMBAT_SAMPLES[case]]
@@ -229,6 +245,8 @@ def baseline_outputs(case, method):
         label = CLONALSCOPE[CASES[case]]["run_label"]
         return [f"{OUT}/{case}/clonalscope/{s}/{label}/decode_states.done" for s in CLONALSCOPE_SAMPLES[case]]
     if case == "zenodo_sim":
+        if ANALYSIS["calicost_sim"] == "deposit":
+            return []
         return [f"{ZS}/calicost/{sim}/repro.done" for sim in CALICOST_SIMS]
     return [f"{OV}/calicost/{tag}/run.done" for tag in CALICOST_RUNS]
 
@@ -259,7 +277,9 @@ def uv_run(env, repo):
     return f"UV_PROJECT_ENVIRONMENT={ENVS[env]} {BIN}/uv run --no-sync --project {REPOS[repo]}"
 
 
-UV_CNAMASTE = uv_run("CNAMASTE_ENV", "CNAMASTE_REPO")
+UV_CNAMASTE = (
+    " ".join(f"{key}={home}" for key, home in NATIVE_HOMES.items()) + " " + uv_run("CNAMASTE_ENV", "CNAMASTE_REPO")
+)
 UV_ANALYSIS = uv_run("CNAMASTE_ANALYSIS_ENV", "CNAMASTE_ANALYSIS_REPO")
 
 shell.prefix(f"set -euo pipefail; mkdir -p {TMP}; export TMPDIR={TMP}; ")
@@ -302,7 +322,7 @@ rule all:
 rule setup:
     input:
         f"{SETUP}/inputs.ok",
-        expand(f"{SETUP}/{{key}}.ok", key=[*REPOS, *ENVS]),
+        expand(f"{SETUP}/{{key}}.ok", key=[*REPOS, *ENVS, *NATIVE]),
 
 
 rule prepare:
@@ -418,18 +438,28 @@ def env_repo(env):
 
 
 def env_command(env):
-    """The shell command that builds `env` where missing, then installs a repository into it where needed."""
+    """The shell command that builds `env` where missing, then installs a repository into it where needed.
+
+    An existing uv environment must match its repository's uv.lock (`uv sync --check`); it is never modified, so a
+    mismatch stops setup. A missing environment is built only where nothing is at its path, and a failed build is
+    removed, so a partial environment is never taken as built by a later run.
+    """
     path, recipe = ENVS[env], C["ENV_RECIPES"][env]
+    not_env = (
+        f"{{ echo '{path} exists and is not an environment: remove it, or set {env} to another prefix' >&2; exit 1; }}"
+    )
     if recipe.startswith("uv:"):
         _, repo, *group = recipe.split(":")
         groups = " ".join(f"--group {g}" for g in group)
+        sync = f"UV_PROJECT_ENVIRONMENT={path} {BIN}/uv sync --project {REPOS[repo]} --locked --all-extras {groups}"
         return (
-            f"if [ -x {path}/bin/python ]; then echo '{path} exists'; else "
-            f"UV_PROJECT_ENVIRONMENT={path} {BIN}/uv sync --project {REPOS[repo]} --locked --all-extras {groups}; fi"
+            f"if [ -x {path}/bin/python ]; then {sync} --check || "
+            f"{{ echo '{path} does not match {REPOS[repo]}/uv.lock: uv sync it, or set {env} to another prefix' >&2; "
+            f"exit 1; }}; else [ ! -e {path} ] || {not_env}; {sync} || {{ rm -rf {path}; exit 1; }}; fi"
         )
     command = (
-        f"if [ -d {path}/conda-meta ]; then echo '{path} exists'; else "
-        f"{MAMBA} env create -y -p {path} -f {under_repo(recipe.format(**REPOS))}; fi"
+        f"if [ -d {path}/conda-meta ]; then echo '{path} exists'; else [ ! -e {path} ] || {not_env}; "
+        f"{MAMBA} env create -y -p {path} -f {under_repo(recipe.format(**REPOS))} || {{ rm -rf {path}; exit 1; }}; fi"
     )
     if env == "CALICOST_ENV":
         command += f"; {path}/bin/python -c 'import calicost' || {path}/bin/pip install -e {REPOS['CALICOST_REPO']}"
@@ -461,6 +491,72 @@ rule build_env:
 
 
 # NB: the configs CalicoST's scripts read through scripts/baselines/common/config.sh ($CONFIGS)
+# NB: a missing library is built from CNAMASTE_REPO's infra/ with this environment's toolchain; an existing one is
+#     checked, never rebuilt; cnamaste then loads it as a run would
+rule build_cnamaste_expansion:
+    input:
+        f"{SETUP}/CNAMASTE_REPO.ok",
+        f"{SETUP}/CNAMASTE_ENV.ok",
+    output:
+        f"{SETUP}/CNAMASTE_EXPANSION_HOME.ok",
+    log:
+        f"{LOGS}/setup/build_cnamaste_expansion.log",
+    params:
+        home=NATIVE_HOMES["CNAMASTE_EXPANSION_HOME"],
+        build=f"{REPOS['CNAMASTE_REPO']}/infra/expansion/build_expansion.sh",
+    shell:
+        """
+        exec >{log} 2>&1
+        if [ -f {params.home}/libcnamaste_expansion.so ]; then
+            echo "{params.home}/libcnamaste_expansion.so exists, not rebuilt"
+        else
+            mkdir -p {params.home}
+            {IN_RUNNER} CNAMASTE_EXPANSION_HOME={params.home} bash {params.build}
+        fi
+        {UV_CNAMASTE} python -c "from cnamaste import expansion; expansion.require('expansion')"
+        touch {output}
+        """
+
+
+# NB: OpenGM cloned at the commit build_opengm.sh pins (it fetches nothing); libstdc++ linked in statically, so the
+#     library loads beside an older system libstdc++
+rule build_cnamaste_opengm:
+    input:
+        f"{SETUP}/CNAMASTE_REPO.ok",
+        f"{SETUP}/CNAMASTE_ENV.ok",
+    output:
+        f"{SETUP}/CNAMASTE_OPENGM_HOME.ok",
+    log:
+        f"{LOGS}/setup/build_cnamaste_opengm.log",
+    params:
+        home=NATIVE_HOMES["CNAMASTE_OPENGM_HOME"],
+        build=f"{REPOS['CNAMASTE_REPO']}/infra/opengm/build_opengm.sh",
+        cxx=f"{SETUP}/cnamaste_opengm_cxx",
+    shell:
+        """
+        exec >{log} 2>&1
+        commit=$(sed -n 's/^commit="\\([0-9a-f]*\\)"$/\\1/p' {params.build})
+        url=$(sed -n 's/^repository="\\(.*\\)"$/\\1/p' {params.build})
+        if [ -f {params.home}/libcnamaste_opengm.so ]; then
+            echo "{params.home}/libcnamaste_opengm.so exists, not rebuilt"
+            if [ -f {params.home}/COMMIT ] && [ "$(cat {params.home}/COMMIT)" != "$commit" ]; then
+                echo "{params.home} is built from OpenGM $(cat {params.home}/COMMIT), not $commit" >&2
+                exit 1
+            fi
+        else
+            mkdir -p {params.home}
+            [ -d {params.home}/src/.git ] || git clone -q $url {params.home}/src
+            git -C {params.home}/src checkout -q $commit
+            printf '#!/usr/bin/env bash\\nexec g++ -static-libstdc++ -static-libgcc "$@"\\n' >{params.cxx}
+            chmod +x {params.cxx}
+            {IN_RUNNER} CXX={params.cxx} BOOST_INCLUDEDIR=$CONDA_PREFIX/include CNAMASTE_OPENGM_HOME={params.home} \\
+            bash {params.build}
+        fi
+        {UV_CNAMASTE} python -c "from cnamaste import external; external.require('opengm_icm')"
+        touch {output}
+        """
+
+
 rule calicost_configs:
     input:
         under_repo(C["CALICOST_CONFIG"]),
@@ -752,7 +848,7 @@ rule ovarian_spatial_016um:
     log:
         f"{LOGS}/prepare/ovarian_spatial_016um.log",
     shell:
-        "{{ mkdir -p {output} && cp -v {OUTS}/spatial/* {B16}/spatial/* {output}/; }} > {log} 2>&1"
+        "{{ mkdir -p {output} && cp -v {OUTS}/spatial/* {output}/ && cp -v {B16}/spatial/* {output}/; }} > {log} 2>&1"
 
 
 # NB: UGP's 16um bins in CalicoST's input layout, CalicoST's and cnamaste's input
@@ -804,6 +900,7 @@ rule celltyping_ovarian:
 # Run: Numbat, per case and sample (scripts/baselines/numbat/)
 
 
+# NB: a run that stops with an error writes FAILED to its status, one stopped by BASELINE_LIMITS fails
 rule numbat_run:
     input:
         f"{SETUP}/NUMBAT_ENV.ok",
@@ -821,13 +918,22 @@ rule numbat_run:
         od=lambda wc: f"{OUT}/{wc.case}/numbat/{wc.s}/{wc.label}/run_numbat",
         max_entropy=lambda wc: NUMBAT[CASES[wc.case]]["max_entropy"],
     shell:
-        in_env("NUMBAT_ENV")
-        + limited("{log.status}")
-        + "Rscript {BASELINES}/numbat/run.R {input.count_mat} {input.allele} {params.od} {threads} "
-        "{params.max_entropy} > {log.run} 2>&1"
+        """
+        {IN_NUMBAT} true
+        set +e
+        {LIMIT} {log.status} Rscript {BASELINES}/numbat/run.R {input.count_mat} {input.allele} {params.od} {threads} \
+            {params.max_entropy} >{log.run} 2>&1
+        rc=$?
+        set -e
+        if [ $rc -eq 0 ] || [ $rc -eq 124 ] || [ $rc -eq 137 ]; then
+            exit $rc
+        fi
+        echo "$(date '+%F %T') FAILED rc=$rc: Numbat stopped" >>{log.status}
+        """
 
 
-# NB: run_numbat's outputs -> <sample>.RNA.cells.tsv and cluster_states.tsv
+# NB: run_numbat's outputs -> <sample>.RNA.cells.tsv and cluster_states.tsv; a run that found no CNV or failed writes
+#     a header-only cells.tsv
 rule numbat_postprocess:
     input:
         rules.numbat_run.output[0],
@@ -838,9 +944,23 @@ rule numbat_postprocess:
     params:
         rd=lambda wc: f"{OUT}/{wc.case}/numbat/{wc.s}/{wc.label}/run_numbat",
         od=lambda wc: f"{OUT}/{wc.case}/numbat/postprocess/{wc.label}/{wc.s}",
+        status=lambda wc: f"{OUT}/{wc.case}/numbat/logs/run_numbat.{wc.s}.{wc.label}.status",
     shell:
-        in_env("NUMBAT_ENV")
-        + "python {BASELINES}/numbat/postprocess.py {wildcards.s} {params.rd} {params.od} > {log} 2>&1"
+        """
+        if awk '/START/ {{f = 0}} /FAILED/ {{f = 1}} END {{exit !f}}' {params.status} 2>/dev/null; then
+            mkdir -p {params.od}
+            printf "BARCODE\\tmalignant\\tclone\\n" >{output}
+            echo "Numbat's run failed ({params.status}), header-only {output}" >{log}
+            exit 0
+        fi
+        if ! compgen -G "{params.rd}/clone_post_*.tsv" >/dev/null && grep -qs "No CNV remains" {params.rd}/log.txt; then
+            mkdir -p {params.od}
+            printf "BARCODE\\tmalignant\\tclone\\n" >{output}
+            echo "no clone_post_*.tsv: Numbat logged 'No CNV remains', header-only {output}" >{log}
+            exit 0
+        fi
+        {IN_NUMBAT} python {BASELINES}/numbat/postprocess.py {wildcards.s} {params.rd} {params.od} >{log} 2>&1
+        """
 
 
 ##################################################
@@ -865,7 +985,8 @@ rule clonalscope_aggregate_matrix:
         "{params.od} > {log} 2>&1"
 
 
-# NB: one single-threaded job per sample: BayesNonparCluster is a single-threaded Gibbs sampler
+# NB: one single-threaded job per sample: BayesNonparCluster is a single-threaded Gibbs sampler; a run that stops
+#     with an error writes a header-only cells.tsv and FAILED to its status, one stopped by BASELINE_LIMITS fails
 rule clonalscope_run:
     input:
         f"{SETUP}/CLONALSCOPE_ENV.ok",
@@ -882,11 +1003,21 @@ rule clonalscope_run:
         mdir=lambda wc: clonalscope_matrix(wc.case, wc.s),
         od=lambda wc: f"{OUT}/{wc.case}/clonalscope/{wc.s}/{wc.label}/raw_output",
     shell:
-        in_env("CLONALSCOPE_ENV")
-        + "OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 "
-        + limited("{log.status}")
-        + "Rscript {BASELINES}/clonalscope/tutorial.R {wildcards.s} "
-        "{params.mdir} {CLONALSCOPE_DATA_RAW} {params.od} > {log.run} 2>&1"
+        """
+        {IN_CLONALSCOPE} true
+        set +e
+        OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 {LIMIT} {log.status} \
+            Rscript {BASELINES}/clonalscope/tutorial.R {wildcards.s} {params.mdir} {CLONALSCOPE_DATA_RAW} {params.od} \
+            >{log.run} 2>&1
+        rc=$?
+        set -e
+        if [ $rc -eq 0 ] || [ $rc -eq 124 ] || [ $rc -eq 137 ]; then
+            exit $rc
+        fi
+        mkdir -p {params.od}
+        printf "BARCODE\\tmalignant\\tcluster\\n" >{output}
+        echo "$(date '+%F %T') FAILED rc=$rc: Clonalscope stopped, header-only {output}" >>{log.status}
+        """
 
 
 # NB: RunCovCluster's result_final -> per-cluster copies; a run that left no Cov_obj.rds (Clonalscope stopped) is
@@ -917,7 +1048,8 @@ rule clonalscope_decode_states:
 # Run: CalicoST (scripts/baselines/calicost/)
 
 
-# NB: the deposit's own configfile0..4 per simulation, paths remapped; parse_input.py, then the rects in parallel
+# NB: the deposit's own configfile0..4 per simulation, paths remapped; parse_input.py, then the rects in parallel; a
+#     run that stops with an error writes FAILED to its status, one stopped by BASELINE_LIMITS fails
 rule calicost_sim:
     input:
         f"{SETUP}/inputs.ok",
@@ -935,9 +1067,17 @@ rule calicost_sim:
     params:
         rects=" ".join(map(str, CALICOST["calicost-sim"]["rects"])),
     shell:
-        "{CALICOST_SHELL} "
-        + limited("{log.status}")
-        + "bash {BASELINES}/calicost/repro.sh {wildcards.sim} {ZS}/calicost '{params.rects}' > {log.run} 2>&1"
+        """
+        set +e
+        {CALICOST_SHELL} {LIMIT} {log.status} \
+            bash {BASELINES}/calicost/repro.sh {wildcards.sim} {ZS}/calicost '{params.rects}' >{log.run} 2>&1
+        rc=$?
+        set -e
+        if [ $rc -eq 0 ] || [ $rc -eq 124 ] || [ $rc -eq 137 ]; then
+            exit $rc
+        fi
+        echo "$(date '+%F %T') FAILED rc=$rc: CalicoST stopped" >>{log.status}
+        """
 
 
 # NB: a staged copy of UGP's formatted bins, unique_snp_ids.npy re-saved for CalicoST's numpy 1.24
@@ -991,23 +1131,38 @@ def cnamaste_over_rides(solver, seed):
     )
 
 
-# NB: a run writes run_<id>/ under paths.output_dir; its id is read from the one config_<id>.yaml it wrote
-RUN_CNAMASTE = (
-    "mkdir -p {params.od}; started=$(mktemp {params.od}/.started.XXXXXX); trap 'rm -f \"$started\"' EXIT; "
-    "OMP_NUM_THREADS={threads} NUMBA_NUM_THREADS={threads} " + UV_CNAMASTE + " run_cnamaste {input.config} "
-    "-o paths.sample_sheet={input.sheet} -o paths.output_dir={params.od} {params.over_rides} > {log} 2>&1; "
-    "find {params.od} -mindepth 2 -maxdepth 2 -path '*/run_*/config_*.yaml' -newer \"$started\" "
-    "| sed 's|.*/config_||; s|[.]yaml$||' > {output}; "
-    'test "$(wc -l < {output})" -eq 1'
+def run_cnamaste(on_failure):
+    """One run_cnamaste, its run's id written to the output; `on_failure` the shell run where it exits non-zero.
+
+    A run writes run_<id>/ under paths.output_dir; its id is read from the one config_<id>.yaml it wrote.
+    """
+    return (
+        "mkdir -p {params.od}; started=$(mktemp {params.od}/.started.XXXXXX); trap 'rm -f \"$started\"' EXIT; "
+        "rc=0; OMP_NUM_THREADS={threads} NUMBA_NUM_THREADS={threads} " + UV_CNAMASTE + " run_cnamaste {input.config} "
+        "-o paths.sample_sheet={input.sheet} -o paths.output_dir={params.od} {params.over_rides} > {log} 2>&1 "
+        "|| rc=$?; if [ $rc -ne 0 ]; then " + on_failure + "; fi; "
+        "find {params.od} -mindepth 2 -maxdepth 2 -path '*/run_*/config_*.yaml' -newer \"$started\" "
+        "| sed 's|.*/config_||; s|[.]yaml$||' > {output}; "
+        'test "$(wc -l < {output})" -eq 1'
+    )
+
+
+# NB: a failed simulation run leaves an empty run id file and FAILED in its log; the ovarian run fails its rule
+RUN_CNAMASTE_SIM = run_cnamaste(
+    "echo \"$(date '+%F %T') FAILED rc=$rc: cnamaste stopped, empty {output}\" >> {log}; : > {output}; exit 0"
 )
+RUN_CNAMASTE_OVARIAN = run_cnamaste("exit $rc")
 PLOT_CNAMASTE = (
-    "rid=$(cat {input.rid}); " + UV_CNAMASTE + " run_cnamaste_plot {params.od}/run_$rid/config_$rid.yaml > {log} 2>&1"
+    "rid=$(cat {input.rid}); if [ -z \"$rid\" ]; then echo 'cnamaste run failed, skipped' > {log}; exit 0; fi; "
+    + UV_CNAMASTE
+    + " run_cnamaste_plot {params.od}/run_$rid/config_$rid.yaml > {log} 2>&1"
 )
 
 
 rule cnamaste_sim:
     input:
         f"{SETUP}/CNAMASTE_ENV.ok",
+        [ancient(f"{SETUP}/{key}.ok") for key in NATIVE],
         sheet=rules.sim_cnamaste_sample_sheet.output[0],
         config=f"{CFG}/cnamaste.zenodo_sim.yaml",
     output:
@@ -1021,7 +1176,7 @@ rule cnamaste_sim:
         od=lambda wc: f"{CN_RUNS}/{wc.sim}/{wc.solver}",
         over_rides=lambda wc: cnamaste_over_rides(wc.solver, wc.seed),
     shell:
-        RUN_CNAMASTE
+        RUN_CNAMASTE_SIM
 
 
 rule cnamaste_sim_plot:
@@ -1068,12 +1223,13 @@ rule cnamaste_sim_qa:
 
 
 ##################################################
-# Run: cnamaste on the ovarian sample, cnamaste's defaults
+# Run: cnamaste on the ovarian sample, cnamaste's config.yaml at cleanup3
 
 
 rule cnamaste_ovarian:
     input:
         f"{SETUP}/CNAMASTE_ENV.ok",
+        [ancient(f"{SETUP}/{key}.ok") for key in NATIVE],
         sheet=rules.ovarian_cnamaste_sample_sheet.output[0],
         config=f"{CFG}/cnamaste.ovarian.yaml",
     output:
@@ -1089,7 +1245,7 @@ rule cnamaste_ovarian:
         od=f"{OV}/cnamaste",
         over_rides="",
     shell:
-        RUN_CNAMASTE
+        RUN_CNAMASTE_OVARIAN
 
 
 rule cnamaste_ovarian_plot:
@@ -1148,6 +1304,7 @@ rule sim_runtime:
 rule vishd_runtime:
     input:
         [path for method in METHODS for path in baseline_outputs("ovarian", method)],
+        f"{OV}/cnamaste/run_id.txt",
     output:
         f"{OV}/runtime.{SAMPLE}.tsv",
     log:
@@ -1161,6 +1318,19 @@ rule vishd_runtime:
 
 ##################################################
 # Analysis
+
+
+def failed(path):
+    """Whether the last run logged in `path`, a .status file or a run log, failed: FAILED after its last START."""
+    if not os.path.exists(path):
+        return False
+    with open(path) as f:
+        return "FAILED" in f.read().rsplit("START", 1)[-1]
+
+
+def failed_sims(template):
+    """The simulations whose last run, its status or log `template` in `{sim}`, failed."""
+    return [sim for sim in SIMS if failed(template.format(sim=sim))]
 
 
 def run_dir(path):
@@ -1205,12 +1375,25 @@ rule benchmark_yaml:
         seed = SEEDS[0]
         cnamaste_sim = {}
         for solver in SOLVERS:
-            run = os.path.basename(run_dir(f"{CN_RUNS}/{SIMS[0]}/{solver}/run_id.seed{seed}.txt"))
+            # NB: a failed run's run id file is empty
+            ran = [p for sim in SIMS if os.path.getsize(p := f"{CN_RUNS}/{sim}/{solver}/run_id.seed{seed}.txt")]
+            if not ran:
+                raise ValueError(f"cnamaste {solver} seed {seed}: every simulation's run failed")
+            run = os.path.basename(run_dir(ran[0]))
             key = "cnamaste" if solver == QA_SOLVER else f"cnamaste-{solver}"
-            cnamaste_sim[key] = {"dir": f"{CN_RUNS}/{{sample_id}}/{solver}/{run}", "solver": solver}
+            cnamaste_sim[key] = {
+                "dir": f"{CN_RUNS}/{{sample_id}}/{solver}/{run}",
+                "solver": solver,
+                "failed": failed_sims(f"{LOGS}/run/cnamaste_sim/{{sim}}.{solver}.seed{seed}.log"),
+            }
         calicost_sim = (
             f"{ZENODO}/nomixing_calicost_related" if ANALYSIS["calicost_sim"] == "deposit" else f"{ZS}/calicost"
         )
+        calicost_failed = (
+            [] if ANALYSIS["calicost_sim"] == "deposit" else failed_sims(f"{LOGS}/run/calicost_sim/{{sim}}.status")
+        )
+        numbat_label = NUMBAT["calicost-sim"]["run_label"]
+        clonalscope_label = CLONALSCOPE["calicost-sim"]["run_label"]
         write_yaml(
             output.benchmark,
             {
@@ -1219,12 +1402,16 @@ rule benchmark_yaml:
                     "groundtruth_dir": SIM_DIR,
                     "runtime": f"{ZS}/simulation.runtime.tsv",
                     "numbat": {
-                        "dir": f"{ZS}/numbat/{{sample_id}}/{NUMBAT['calicost-sim']['run_label']}/run_numbat"
+                        "dir": f"{ZS}/numbat/{{sample_id}}/{numbat_label}/run_numbat",
+                        "failed": failed_sims(f"{ZS}/numbat/logs/run_numbat.{{sim}}.{numbat_label}.status"),
                     },
                     "clonalscope": {
-                        "dir": f"{ZS}/clonalscope/{{sample_id}}/{CLONALSCOPE['calicost-sim']['run_label']}/postprocess"
+                        "dir": f"{ZS}/clonalscope/{{sample_id}}/{clonalscope_label}/postprocess",
+                        "failed": failed_sims(
+                            f"{ZS}/clonalscope/logs/run_tutorial.{{sim}}.{clonalscope_label}.status"
+                        ),
                     },
-                    "calicost": {"dir": f"{calicost_sim}/{{sample_id}}"},
+                    "calicost": {"dir": f"{calicost_sim}/{{sample_id}}", "failed": calicost_failed},
                     **cnamaste_sim,
                 },
             },
