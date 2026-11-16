@@ -15,14 +15,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import NamedTuple
 
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
 from scripts.metrics.latex_tables import get_article_tex, write_pdf
 from scripts.metrics.outputs import get_text_path
 from scripts.metrics.real_data_metrics import get_summary_metrics
 from scripts.metrics.simulation_metrics import get_level_metrics, get_runtime_columns
 from scripts.plots.pages import get_page_name
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
 
 logger = get_logger("metric_text", start_time=start_time)
 

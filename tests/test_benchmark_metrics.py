@@ -273,7 +273,7 @@ def test_per_run_tables_merge_in_run_order_and_agree() -> None:
 def test_metric_text_defines_every_metric_scored() -> None:
     """Every metric column the simulation and real-data tables score has a paragraph of its dataset in the metric text,
     and every paragraph names a page drawing it, so the text cannot drift from the metrics."""
-    pytest.importorskip("cnplot", reason="cnplot is in the luo dependency group: uv sync --group luo")
+    pytest.importorskip("cnplot", reason="cnplot is in the analysis environment: uv sync (pyproject.toml)")
     from scripts.metrics.metric_text import get_metric_texts, get_missing_columns
 
     texts = get_metric_texts()

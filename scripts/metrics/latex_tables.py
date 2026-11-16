@@ -22,14 +22,13 @@ import subprocess
 from pathlib import Path
 
 import pandas as pd
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
 from scripts.metrics.outputs import get_table_path, get_text_path
 from scripts.metrics.qc_metrics import get_false_positive_column
 from scripts.metrics.read_method_input import get_method_name
 from scripts.metrics.simulation_metrics import get_runtime_columns
 from scripts.plots.style import get_ordered_runs
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
 
 logger = get_logger("latex_tables", start_time=start_time)
 

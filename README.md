@@ -20,9 +20,9 @@ bash Miniforge3-$(uname)-$(uname -m).sh
 ```
 
 ## Configuration & Run
-Copy the "Set" sections of `configs/cna_maste_reproducibility.yaml` into your own config, set its paths, and pass it with
-`--configfile`. Its keys override the default, which stays as shipped, so the pinned "Fixed" settings keep coming from
-this repository.
+Copy the "Set" sections of `configs/cna_maste_reproducibility.yaml` into your own config, set its paths, and pass it
+with `--configfile`. Its keys override the default, which stays as shipped, so the pinned "Fixed" settings keep coming
+from this repository.
 
 ```sh
 git clone https://github.com/raphael-group/cna_maste_reproducibility.git

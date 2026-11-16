@@ -20,6 +20,9 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.figure_style import DPI, page_style, restyle
+from scripts.cnamaste_port.logger import get_logger
 from scripts.metrics.gene_level import get_max_overlap
 from scripts.metrics.outputs import get_page_path, get_plot_path, get_table_path
 from scripts.metrics.read_method_input import (
@@ -38,10 +41,6 @@ from scripts.plots.simulation import (
     plot_solver_ablation,
 )
 from scripts.plots.style import get_run_labels, get_run_order, get_setting_label
-
-from cnamaste.config import start_time
-from cnamaste.figure_style import DPI, page_style, restyle
-from cnamaste.logger import get_logger
 
 logger = get_logger("pages", start_time=start_time)
 

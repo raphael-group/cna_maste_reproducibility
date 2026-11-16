@@ -2,7 +2,8 @@
 
 Runpeng Luo (2026-11-09), from `scripts/run_benchmark.py`'s command line (2026-11-04)
 
-Dependencies: a cnamaste repository, `$CNAMASTE_ROOT`, its `python/` on `PYTHONPATH` (`get_cnamaste_root`); pyyaml.
+Dependencies: pyyaml; the analysis environment (`pyproject.toml`). No cnamaste: what the analysis takes from it is
+ported in `scripts/cnamaste_port/`.
 
 `run_cna_maste_reproducibility.smk` writes `<OUTDIR>/configs/analysis_options.yaml`, one key per field of
 `AnalysisOptions`, from the benchmark yaml's `vishd.<sample>` and the config's `ANALYSIS`; each step reads it
@@ -99,25 +100,19 @@ Notes/References:
 
 from __future__ import annotations
 
-import os
 from dataclasses import MISSING, dataclass, field, fields
 from pathlib import Path
 
 import yaml
+from scripts.cnamaste_port.calicost.read import CALICOST_PLOIDIES
 from scripts.metrics.read_method_input import get_benchmark_dir, get_calicost_fallbacks, get_run_argument
 from scripts.plots.cnamaste_page import get_cnamaste_input_mismatch
-
-import cnamaste
-from cnamaste.calicost.read import CALICOST_PLOIDIES
 
 BENCHMARK = get_benchmark_dir()
 """The benchmark's directory: `scripts/`, `configs/` and `data/`."""
 
 DATA = BENCHMARK / "data"
 """The benchmark's `data/`: the genome axis' default files."""
-
-CNAMASTE_ROOT = "CNAMASTE_ROOT"
-"""The environment variable naming the cnamaste repository `cnamaste` is imported from (the pipeline sets it)."""
 
 RUNS = ("numbat", "clonalscope", "calicost", "cnamaste")
 """The sample's runs scored where no `runs` is given."""
@@ -315,24 +310,3 @@ def read_options(path: str | Path) -> AnalysisOptions:
     if error:
         raise ValueError(f"{path}: {error}")
     return options
-
-
-def get_cnamaste_root() -> Path:
-    """Get the cnamaste repository `cnamaste` is imported from: `$CNAMASTE_ROOT`, its package `python/cnamaste/`.
-
-    Returns:
-        The repository's root.
-
-    Raises:
-        RuntimeError: where `CNAMASTE_ROOT` is unset, or `cnamaste` is imported from another directory.
-    """
-    root = os.environ.get(CNAMASTE_ROOT)
-    if not root:
-        raise RuntimeError(
-            f"{CNAMASTE_ROOT} is unset: set it to a cnamaste repository's root (docs/reference.md, Analysis step)."
-        )
-    package = Path(root).resolve() / "python" / "cnamaste"
-    imported = Path(cnamaste.__file__).resolve().parent
-    if imported != package:
-        raise RuntimeError(f"cnamaste is imported from {imported}, not {package}: put {package.parent} on PYTHONPATH.")
-    return package.parents[1]

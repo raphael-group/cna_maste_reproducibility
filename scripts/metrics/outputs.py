@@ -20,9 +20,8 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
 
 logger = get_logger("outputs", start_time=start_time)
 

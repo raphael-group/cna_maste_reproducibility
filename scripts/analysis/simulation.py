@@ -16,6 +16,8 @@ Outputs (under outdir):
 from __future__ import annotations
 
 from scripts.analysis.options import AnalysisOptions
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
 from scripts.metrics.gene_level import (
     get_autosomal_regions,
     get_region_genes,
@@ -31,9 +33,6 @@ from scripts.metrics.simulation_metrics import (
     read_simulation_config,
 )
 from scripts.plots.simulation import get_class_medians
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
 
 logger = get_logger("scripts.analysis.simulation", start_time=start_time)
 

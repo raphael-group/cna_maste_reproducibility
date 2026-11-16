@@ -13,6 +13,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from scripts.cnamaste_port.qa.metrics import RunEstimate, exact_altered, phase_free, sensitivity, specificity
+from scripts.cnamaste_port.truth import Truth
 from scripts.metrics.cna_states import get_ab_states
 from scripts.metrics.gene_level import get_gene_profile
 from scripts.metrics.read_method_input import MethodInput
@@ -29,9 +31,6 @@ from scripts.metrics.supervised_metrics import (
     get_state_confusion,
     get_state_metrics,
 )
-
-from cnamaste.qa.metrics import RunEstimate, exact_altered, phase_free, sensitivity, specificity
-from cnamaste.truth import Truth
 
 
 def test_ab_states_are_numbats_pairs_either_phase() -> None:

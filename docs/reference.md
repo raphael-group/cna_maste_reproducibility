@@ -1,7 +1,7 @@
 # Reference
 
-`run_cna_maste_reproducibility.smk`, one Snakemake workflow, every step a rule of it. The ovarian sample's cell types are
-in [celltyping.md](celltyping.md).
+`run_cna_maste_reproducibility.smk`, one Snakemake workflow, every step a rule of it. The ovarian sample's cell types
+are in [celltyping.md](celltyping.md).
 
 ## Table of Contents
 - [Environments](#environments)
@@ -49,18 +49,20 @@ in [celltyping.md](celltyping.md).
 | `NUMBAT_ENV` | `configs/envs/numbat.yaml` | Numbat, bioconda `r-numbat` 1.5.2 (CRAN). |
 | `CLONALSCOPE_ENV` | `configs/envs/clonalscope.yaml` | Clonalscope, installed from `CLONALSCOPE_REPO`. |
 | `CNAMASTE_ENV` | `uv:CNAMASTE_REPO` | cnamaste at `cleanup3`: `run_cnamaste`, `run_cnamaste_plot`, `run_sim_qa`. |
-| `CNAMASTE_ANALYSIS_ENV` | `uv:CNAMASTE_ANALYSIS_REPO:luo` | The analysis step and the tests: cnamaste at `42b96ff`, its `luo` group adding cnplot. |
+| `ANALYSIS_ENV` | `uv:REPO`: this repository's `pyproject.toml` and `uv.lock` | The analysis step and the tests: numpy, pandas, scipy, matplotlib, anndata, polars, numba, seaborn, scikit-learn at the versions of cna_maste's environment at `42b96ff`, and [cnplot](https://github.com/raphael-group/cnplot) at `cc5bbd7`; no cnamaste. |
 | `UNIVERSAL_GENOTYPING_PIPELINE_ENV` | `{UGP_REPO}/environment.yaml` | Universal-Genotyping-Pipeline (UGP) on the ovarian sample. |
-| `CELLTYPING_ENV` | `configs/envs/celltyping.yaml` | The cell types; `scripts/utils/format_bb.py`. |
+| `CELLTYPING_ENV` | `configs/envs/celltyping.yaml` | The cell types; `scripts/utils/format_bb.py` and `aggregate_bb.py`. |
 
 > [!IMPORTANT]
-> - The analysis imports cnamaste at `42b96ff` and the runs use `cleanup3`: `scripts/metrics/` and `scripts/plots/`
->   import modules that `cleanup3` no longer has.
+> - cnamaste runs the method alone: the analysis imports no cnamaste. What it takes from cnamaste, its readers, figure
+>   style and page layout, is ported in `scripts/cnamaste_port/`, verbatim from cna_maste at `42b96ff`
+>   (`tests/test_no_cnamaste_imports.py` checks).
 > - cnamaste's repository is private: cloning it needs read access and a git holding your GitHub credentials. On macOS
 >   the system git (`/usr/bin/git`) reads them from the keychain; conda-forge's git has no credential helper set.
 > - The method runs need Linux x86_64: bioconda builds `eagle2` (UGP's phaser) and `r-numbat` for `linux-64` and
 >   `osx-64` alone, and the baseline runs need GNU time and timeout and systemd user scopes with the memory controller
->   delegated, for their `BASELINE_LIMITS`. The LaTeX tables need `pdflatex` (TeX Live). The README's first commands check each.
+>   delegated, for their `BASELINE_LIMITS`. The LaTeX tables need `pdflatex` (TeX Live). The README's first commands
+>   check each.
 
 ---
 
@@ -114,7 +116,6 @@ A missing clone is cloned at its `rev`; an existing one is checked against it an
 | `NUMBAT_REPO` | [kharchenkolab/numbat](https://github.com/kharchenkolab/numbat) | `54d8268f3d14bd6afaa6784eeb839db7479a8947`, the commit setting `Version: 1.5.2`; GitHub has no `v1.5.2` tag |
 | `CLONALSCOPE_REPO` | [seasoncloud/Clonalscope](https://github.com/seasoncloud/Clonalscope) | `07dd0c576b6754d18dda86ec8905d8a9be5e77b0` (main; package version 1.1.0) |
 | `CNAMASTE_REPO` | michaelJwilson/cna_maste (private) | `cleanup3` |
-| `CNAMASTE_ANALYSIS_REPO` | michaelJwilson/cna_maste (private) | `42b96ff` |
 | `UGP_REPO` | [raphael-group/Universal-Genotyping-Pipeline](https://github.com/raphael-group/Universal-Genotyping-Pipeline) | `c5c0b9b9ccb84268f4d29f9840dd91b71d793d7d` |
 
 ### Method parameters
@@ -144,7 +145,8 @@ each step reads. `ANALYSIS` picks the CalicoST runs:
 The benchmark yaml names the runs:
 
 - `vishd: <sample>:` per run key a `dir` (what the method's reader takes); `ugp` (`spots`, the in-tissue spots;
-  `spaceranger_dir`; `bb_dir`, a directory per bin side); `cell_type.labels`; and `runtime`, the runs' runtime table.
+  `spaceranger_dir`; `bb_dir`, a directory per bin side: UGP's 16 um `bb`, and its sum to each coarser side Numbat or
+  Clonalscope runs at, `ovarian_bb_coarse`); `cell_type.labels`; and `runtime`, the runs' runtime table.
   The ovarian CalicoST runs are `calicost`, `calicost_run`, and `calicost_<tag less the sample>`. The figure step's
   options are read from it.
 - `simulation:` `groundtruth_dir`, `runtime`, and per method a `dir` template of `{sample_id}`. Each cnamaste solver
@@ -204,7 +206,7 @@ A target runs the steps up to it: `snakemake <target> -s run_cna_maste_reproduci
 | Target | Rules |
 |---|---|
 | `setup` | `check_inputs` (every input path); `clone_repo` (a missing repository cloned, an existing one checked); `build_env` (a missing environment built); `build_cnamaste_expansion`, `build_cnamaste_opengm` (a missing cnamaste solver library built with `CNA_MASTE_REPRODUCIBILITY_ENV`'s toolchain, by `CNAMASTE_REPO`'s `infra/expansion/build_expansion.sh` and `infra/opengm/build_opengm.sh`, OpenGM cloned at the commit the latter pins and `libstdc++` linked in statically; an existing one kept; each checked by cnamaste's own `require`). |
-| `prepare` | Per simulation: its 10x matrix, Numbat count matrix and allele counts, and cnamaste sample sheet. On the ovarian sample: a 16 um BAM where Space Ranger has none (UGP's `convert_bam_visium3prime.py`, `ovarian_bam_016um`); UGP's genotyping, phasing and 16 um bins (`ugp_ovarian`); then Numbat's 32 um counts and allele counts, the bins in CalicoST's layout (`ovarian_format_bb`, `scripts/utils/format_bb.py`) and cnamaste's sample sheet. Clonalscope's references; the sample's cell types (`celltyping_ovarian`). |
+| `prepare` | Per simulation: its 10x matrix, Numbat count matrix and allele counts, and cnamaste sample sheet. On the ovarian sample: a 16 um BAM where Space Ranger has none (UGP's `convert_bam_visium3prime.py`, `ovarian_bam_016um`); UGP's genotyping, phasing and 16 um bins (`ugp_ovarian`); then Numbat's 32 um counts and allele counts, the bins in CalicoST's layout (`ovarian_format_bb`, `scripts/utils/format_bb.py`), UGP's 16 um `bb` summed to each coarser side Numbat or Clonalscope runs at, the bins they read (`ovarian_bb_coarse`, `scripts/utils/aggregate_bb.py`), and cnamaste's sample sheet. Clonalscope's references; the sample's cell types (`celltyping_ovarian`). |
 | `run_methods` | Numbat, Clonalscope and CalicoST per case and sample ([Baselines](#baselines)); cnamaste ([cnamaste](#cnamaste)); the runtime tables (`sim_runtime`, `vishd_runtime`). |
 | `analysis` | The four steps of `scripts/analysis/` ([Analysis step](#analysis-step)). |
 
@@ -242,8 +244,9 @@ per step and sample, in its own environment, running a program of `scripts/basel
 > [!WARNING]
 > Each baseline's run rule, `numbat_run`, `clonalscope_run`, `calicost_sim` (a simulation's whole job) and
 > `calicost_ovarian`, runs its program through `common/limit.sh`: GNU `timeout` at `max_walltime` inside a systemd
-> user scope with `MemoryMax` at `max_rss` (`BASELINE_LIMITS`). A run over either limit is stopped and its rule fails, even where a run that stops with an error does not;
-> the `.status` file beside its log has the exit code, 124 for the wall time or 137 for memory, and the limit.
+> user scope with `MemoryMax` at `max_rss` (`BASELINE_LIMITS`). A run over either limit is stopped and its rule fails,
+> whereas some rules record a run that stops with an error and go on (above); the `.status` file beside its log has the
+> exit code, 124 for the wall time or 137 for memory, and the limit.
 
 Diagnostics, run by hand with their paths as arguments: `calicost/compare_repro.py` (a CalicoST rerun against the
 deposit's), `numbat/run_stats.py` (Numbat input sizes and step timings), `common/extract_deposit_results.py` (the
@@ -253,21 +256,28 @@ deposit's CalicoST, Numbat and STARCH labels and profiles).
 
 | Rule | Runs |
 |---|---|
-| `cnamaste_sim` | `run_cnamaste` per simulation, solver and seed, as cnamaste's `batch_zenodo_run.sh` runs each job: `-o hmrf.random_seed`, `hmrf.label_solver`, `hmm.initializer` and `ab_decode.decoder` (`lattice` -> `hmm_ab`, `calicost` -> `calicost`), into `nomixing_cnamaste_related/<sim>/<solver>/run_<id>/`; a run that stops with an error leaves an empty `run_id.seed<seed>.txt` and `FAILED rc=<rc>` in its log, and is skipped by `cnamaste_sim_plot`, left out by `run_sim_qa` and left unscored. |
+| `cnamaste_sim` | `run_cnamaste` per simulation, solver and seed, as cnamaste's `batch_zenodo_run.sh` runs each job: `-o hmrf.random_seed`, `hmrf.label_solver`, `hmm.initializer` and `ab_decode.decoder` (`lattice` -> `hmm_ab`, `calicost` -> `calicost`), into `nomixing_cnamaste_related/<sim>/<solver>/run_<id>/`; a run that stops with an error leaves an empty `run_id.seed<seed>.txt` and `FAILED rc=<rc>` in its log, and is skipped by `cnamaste_sim_plot`, left out by `run_sim_qa` and left unscored. Every thread pool of a run, OpenMP, Numba, OpenBLAS and MKL, is set to `threads`. |
 | `cnamaste_sim_plot` | `run_cnamaste_plot` of each run. |
 | `cnamaste_sim_qa` | `run_sim_qa` of `qa_solver` against CalicoST and each other solver (`--one_shot --overwrite --calicost_ploidy`). |
 | `cnamaste_ovarian`, `cnamaste_ovarian_plot` | `run_cnamaste` on the sample with cnamaste's `config.yaml` at cleanup3, less its paths and references (`hmrf.label_solver: expansion`, alpha expansion), then `run_cnamaste_plot`. A failed run fails its rule: the ovarian figures and tables need its outputs. |
 | `cnamaste_ovarian_binned_data` | `scripts/baselines/cnamaste/write_binned_data.py`: the run's `binned_data.npz`, which the cnamaste page reads and `cleanup3` no longer writes. |
 
+> [!NOTE]
+> A solver with the `calicost` initializer starts its HMM from CalicoST's `initialization_by_gmm`, a scikit-learn
+> `GaussianMixture` seeded by `hmm.random_state`. Its fit runs on BLAS, whose sums are ordered by the BLAS thread
+> count, so a near tie can resolve to another start at another count, and the run to other calls. The pipeline sets
+> every thread pool to `threads`, BLAS's included, so a rerun at the same `threads` and environment starts from the
+> same point, whatever the user's shell exports.
+
 ### Analysis step
 
-Each rule runs a function of `scripts/analysis/` in `CNAMASTE_ANALYSIS_ENV`, with `CNAMASTE_ROOT` set to
-`CNAMASTE_ANALYSIS_REPO` and its `python/` and the repository on `PYTHONPATH`; each stops if `cnamaste` is imported from
-anywhere else (`options.get_cnamaste_root`).
+Each rule runs a function of `scripts/analysis/` in `ANALYSIS_ENV`, with the repository on `PYTHONPATH`. No cnamaste
+is installed there or imported: the analysis takes cnamaste's readers, figure style and page layout from
+`scripts/cnamaste_port/`.
 
 | Rule | Runs | Writes |
 |---|---|---|
-| `analysis_options` | | `<OUTDIR>/configs/analysis_options.yaml`, the options from the benchmark yaml and `ANALYSIS`; logs the analysis checkout's commit. |
+| `analysis_options` | | `<OUTDIR>/configs/analysis_options.yaml`, the options from the benchmark yaml and `ANALYSIS`; logs this repository's commit. |
 | `analysis_simulation_metrics` | `simulation.write_simulation_metrics` | `tsvs/<simulation_dataset>.tsv.gz`, `.median.tsv.gz`, `tsvs/gene_level_cnp/`. |
 | `analysis_real_data_metrics` | `real_data.write_real_data_metrics` | `tsvs/<real_data_dataset>.tsv.gz`, `.json`, `tsvs/<sample>.*.tsv.gz`. |
 | `analysis_tables` | `tables.write_tables` | `text/` ([LaTeX tables](#latex-tables)). |
@@ -514,7 +524,8 @@ Clonalscope's normal clusters (`real_data_metrics.get_normal_clones`).
 ### CalicoST clones missing from the unconstrained table
 
 A CalicoST clone can be in `clone_labels.tsv` yet absent from `cnv_seglevel.tsv`, its unconstrained integer copies
-(CalicoST c1abcae, [`calicost_main.py`](https://github.com/raphael-group/CalicoST/blob/c1abcae/src/calicost/calicost_main.py),
+(CalicoST c1abcae,
+[`calicost_main.py`](https://github.com/raphael-group/CalicoST/blob/c1abcae/src/calicost/calicost_main.py),
 [`find_integer_copynumber.py`](https://github.com/raphael-group/CalicoST/blob/c1abcae/src/calicost/find_integer_copynumber.py)):
 
 - The labels are the final fit's `new_assignment` (`calicost_main.py:388`). Every clone merge,
@@ -611,8 +622,9 @@ epithelial, low-confidence or untyped spot is in neither count.
   `Method`, `Resolution` [$\mu$m], `Spot coverage rate` and `False-positive rate` to 0.001, `Runtime [mins]` to 0.1,
   `Memory [GB]` to 0.01, `$-$` where not recorded (`latex_tables.get_table_columns`). Needs `\usepackage{booktabs}`.
 - `metric.tex` (`metric_text.write_metric_text`): a section per dataset, a paragraph per metric with its columns and
-  its definition as computed, each followed by a `% shown in: <page> (<panels>)` line per page drawing it. The step stops
-  where a scored metric column has no paragraph (`metric_text.get_missing_columns`). Needs `\usepackage{amsmath,amssymb}`.
+  its definition as computed, each followed by a `% shown in: <page> (<panels>)` line per page drawing it. The step
+  stops where a scored metric column has no paragraph (`metric_text.get_missing_columns`). Needs
+  `\usepackage{amsmath,amssymb}`.
 - Each typeset on letter pages by `pdflatex` (`latex_tables.get_article_tex`), `table.pdf` and `metric.pdf`, no date or
   ID in the PDF, so equal tables give equal bytes; pdflatex's logs `table.log` and `metric.log`.
 
@@ -673,14 +685,15 @@ with 0.02 in of white round it (`plots.pages.SAVE_OPTIONS`): a paper figure's pa
 
 | Module | Holds |
 |---|---|
-| `scripts/analysis/` | The analysis step: `options` (the options and `get_cnamaste_root`), `simulation`, `real_data`, `tables`, `figures`. |
+| `scripts/analysis/` | The analysis step: `options`, `simulation`, `real_data`, `tables`, `figures`. |
+| `scripts/cnamaste_port/` | What the analysis takes from cnamaste: each definition it reaches, verbatim from cna_maste at `42b96ff` in cnamaste's module layout (`cnamaste.x` is `scripts.cnamaste_port.x`), each module headed by its source; `figure_style.style` returns the shipped `DEFAULT`, which cna_maste's `pyproject.toml` states. |
 | `scripts/metrics/read_method_input.py` | The readers: each method's run, the spots, their cell types, and UGP's counts per bin and spot. |
 | `scripts/metrics/cna_states.py` | The CNA states, and each method's fields per segment and clone. |
 | `scripts/metrics/gene_level.py`, `segment_level.py` | The genes inside the region bed and the runs' joint segments, and each run's profile on them. |
 | `scripts/metrics/supervised_metrics.py` | A run against the truth; `qa.metrics`' functions copied, on a run's labels and profile. |
 | `scripts/metrics/unsupervised_metrics.py` | Two runs against each other. |
 | `scripts/metrics/qc_metrics.py` | Genome composition, spot coverage and false-positive counts. |
-| `scripts/metrics/cn_error.py`, `pseudobulk.py` | The copy-number error; each clone's pseudobulk RDR and BAF per bin beside its expected ones (`pseudobulk.py`, imported by no module). |
+| `scripts/metrics/cn_error.py` | The copy-number error. |
 | `scripts/metrics/simulation_metrics.py`, `real_data_metrics.py` | The simulations' and the sample's wide tables. |
 | `scripts/metrics/latex_tables.py`, `metric_text.py`, `outputs.py` | The LaTeX table, the metric text, and the outputs' paths and writers. |
 | `scripts/metrics/runtime.py` | The runtime tables. |
@@ -690,16 +703,17 @@ with 0.02 in of white round it (`plots.pages.SAVE_OPTIONS`): a paper figure's pa
 | `scripts/baselines/` | The baselines' programs ([Baselines](#baselines)). |
 | `scripts/celltyping/` | The cell types ([celltyping.md](celltyping.md)). |
 | `scripts/utils/format_bb.py` | UGP's bins in CalicoST's input layout, CalicoST's and cnamaste's ovarian input (rule `ovarian_format_bb`). |
+| `scripts/utils/aggregate_bb.py` | UGP's 16 um `bb` summed to a coarser side, a `bb` directory of the UMI page's row at that side (rule `ovarian_bb_coarse`). |
 
 ---
 
 ## Test
 
 `tests/` holds the tests; they need no `tmp/input_data/`, and `pytest.ini` puts the repository on the import path. Run
-from the repository, in the cnamaste analysis environment:
+from the repository, in the analysis environment:
 
 ```sh
-UV_PROJECT_ENVIRONMENT=/path/to/envs/cnamaste_analysis_env uv run --no-sync --project /path/to/repos/cna_maste_analysis pytest
+UV_PROJECT_ENVIRONMENT=/path/to/envs/cna_maste_reproducibility_analysis uv run --no-sync pytest
 ```
 
 The code is formatted with ruff (`ruff.toml`) and snakefmt, both at 120 columns:

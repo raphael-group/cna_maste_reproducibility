@@ -17,6 +17,7 @@ from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 from matplotlib.ticker import FuncFormatter, LogLocator, MultipleLocator, NullFormatter
+from scripts.cnamaste_port.figure_style import page_style
 from scripts.plots.layout import set_text_sizes
 from scripts.plots.style import (
     add_panel_letters,
@@ -30,8 +31,6 @@ from scripts.plots.style import (
     put_key_under,
     set_axes_height,
 )
-
-from cnamaste.figure_style import page_style
 
 CN_ERROR_CHANNELS = (("rdr", "RDR"), ("baf", "BAF"))
 """The copy-number error's channels, as `(suffix, label)`: `mse_<suffix>` and `ss_<suffix>` of `cn_error`'s table."""

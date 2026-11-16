@@ -13,11 +13,10 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
 from scripts.metrics.gene_level import get_chromosomes, get_interval_fields
 from scripts.metrics.read_method_input import MethodInput
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
 
 logger = get_logger("segment_level", start_time=start_time)
 

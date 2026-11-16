@@ -55,8 +55,6 @@ CALICOST_REPO: /path/to/repos/CalicoST
 NUMBAT_REPO: /path/to/repos/numbat
 CLONALSCOPE_REPO: /path/to/repos/Clonalscope
 CNAMASTE_REPO: /path/to/repos/cna_maste
-# NB: cnamaste at the commit the analysis (scripts/metrics, scripts/plots) imports from
-CNAMASTE_ANALYSIS_REPO: /path/to/repos/cna_maste_analysis
 UGP_REPO: /path/to/repos/Universal-Genotyping-Pipeline
 
 ##################################################
@@ -65,7 +63,8 @@ CALICOST_ENV: /path/to/envs/calicost_env
 NUMBAT_ENV: /path/to/envs/numbat_env
 CLONALSCOPE_ENV: /path/to/envs/clonalscope_env
 CNAMASTE_ENV: /path/to/envs/cnamaste_env
-CNAMASTE_ANALYSIS_ENV: /path/to/envs/cnamaste_analysis_env
+# NB: the analysis step and the tests, built from this repository's pyproject.toml and uv.lock
+ANALYSIS_ENV: /path/to/envs/cna_maste_reproducibility_analysis
 UNIVERSAL_GENOTYPING_PIPELINE_ENV: /path/to/envs/universal-genotyping-env
 CELLTYPING_ENV: /path/to/envs/celltyping_env
 CNA_MASTE_REPRODUCIBILITY_ENV: /path/to/envs/cna_maste_reproducibility
@@ -98,22 +97,19 @@ REPOS:
     # NB: private; cloning needs read access and a git holding GitHub credentials
     url: https://github.com/michaelJwilson/cna_maste.git
     rev: cleanup3
-  CNAMASTE_ANALYSIS_REPO:
-    url: https://github.com/michaelJwilson/cna_maste.git
-    rev: 42b96ff
   UGP_REPO:
     url: https://github.com/raphael-group/Universal-Genotyping-Pipeline
     rev: c5c0b9b9ccb84268f4d29f9840dd91b71d793d7d
 
 ##################################################
 # Fixed: environment -> its recipe: a conda yaml (`{UGP_REPO}` its clone), or uv:<repository>[:<group>] for that
-# repository's uv.lock (uv sync --locked --all-extras into the prefix)
+# repository's uv.lock (uv sync --locked --all-extras into the prefix), `REPO` this repository
 ENV_RECIPES:
   CALICOST_ENV: configs/envs/calicost.yaml
   NUMBAT_ENV: configs/envs/numbat.yaml
   CLONALSCOPE_ENV: configs/envs/clonalscope.yaml
   CNAMASTE_ENV: uv:CNAMASTE_REPO
-  CNAMASTE_ANALYSIS_ENV: uv:CNAMASTE_ANALYSIS_REPO:luo
+  ANALYSIS_ENV: uv:REPO
   UNIVERSAL_GENOTYPING_PIPELINE_ENV: "{UGP_REPO}/environment.yaml"
   CELLTYPING_ENV: configs/envs/celltyping.yaml
   CNA_MASTE_REPRODUCIBILITY_ENV: configs/envs/cna_maste_reproducibility.yaml
@@ -149,6 +145,7 @@ CNAMASTE:
     random_seeds: [0]
     qa_solver: expansion-lattice-lattice
     calicost_ploidy: diploid
+    # NB: every thread pool of a run, BLAS's included; the calicost initializer's start depends on BLAS's count
     threads: 4
     # NB: zenodo_sim_config.yaml of cnamaste at cleanup3, less its paths and references
     config:

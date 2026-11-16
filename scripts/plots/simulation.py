@@ -30,6 +30,10 @@ from matplotlib.colors import to_rgba
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter, LogLocator, NullFormatter, NullLocator
 from matplotlib.transforms import offset_copy
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.figure_style import page_style
+from scripts.cnamaste_port.logger import get_logger
+from scripts.cnamaste_port.plot.layout import GAP, LETTER
 from scripts.metrics.read_method_input import get_method_name
 from scripts.metrics.simulation_metrics import (
     get_level_column,
@@ -50,11 +54,6 @@ from scripts.plots.style import (
     put_key_under,
     set_axes_height,
 )
-
-from cnamaste.config import start_time
-from cnamaste.figure_style import page_style
-from cnamaste.logger import get_logger
-from cnamaste.plot.layout import GAP, LETTER
 
 logger = get_logger("simulation", start_time=start_time)
 

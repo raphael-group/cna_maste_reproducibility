@@ -21,12 +21,11 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from scripts.cnamaste_port.truth import Truth
 from scripts.metrics.cna_states import get_ab_states, get_called_states
 from scripts.metrics.gene_level import get_max_overlap
 from scripts.metrics.read_method_input import MethodInput
 from sklearn.metrics import adjusted_rand_score
-
-from cnamaste.truth import Truth
 
 ABPair = tuple[int, int]
 

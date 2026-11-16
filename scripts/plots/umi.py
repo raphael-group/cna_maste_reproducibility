@@ -27,6 +27,10 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sp
 from matplotlib.figure import Figure
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.figure_style import PAPER_WIDTH, page_style
+from scripts.cnamaste_port.logger import get_logger
+from scripts.cnamaste_port.plot.layout import add_axes
 from scripts.metrics.qc_metrics import get_umi_comparison, get_umi_measures
 from scripts.metrics.read_method_input import (
     Run,
@@ -37,11 +41,6 @@ from scripts.metrics.read_method_input import (
 )
 from scripts.plots.layout import set_text_sizes
 from scripts.plots.style import add_panel_letters, get_panel_rows, get_setting_label
-
-from cnamaste.config import start_time
-from cnamaste.figure_style import PAPER_WIDTH, page_style
-from cnamaste.logger import get_logger
-from cnamaste.plot.layout import add_axes
 
 logger = get_logger("umi", start_time=start_time)
 

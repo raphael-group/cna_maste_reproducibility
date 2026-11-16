@@ -20,6 +20,10 @@ import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.figure import Figure
 from matplotlib.patches import Patch
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.figure_style import page_size, page_style
+from scripts.cnamaste_port.logger import get_logger
+from scripts.cnamaste_port.plot.layout import GAP, LETTER, add_axes, place
 from scripts.metrics.cna_states import get_cna_states
 from scripts.metrics.read_method_input import get_method_name
 from scripts.metrics.unsupervised_metrics import compute_state_jaccard
@@ -35,11 +39,6 @@ from scripts.plots.style import (
     get_run_labels,
     get_run_order,
 )
-
-from cnamaste.config import start_time
-from cnamaste.figure_style import page_size, page_style
-from cnamaste.logger import get_logger
-from cnamaste.plot.layout import GAP, LETTER, add_axes, place
 
 logger = get_logger("run_comparison", start_time=start_time)
 

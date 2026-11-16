@@ -2,9 +2,15 @@
 # `cnamaste` is first-party and `scripts` third-party, the import order these modules had inside that repository.
 line-length = 120
 extend-exclude = [".build", "tmp"]
+# NB: ruff's default; pyproject.toml's requires-python, the analysis environment's, would raise it for every script
+target-version = "py310"
 
 [lint]
 extend-select = ["I"]
+
+[lint.per-file-ignores]
+# NB: the port is cnamaste's code verbatim; its imports are checked, its style is cnamaste's
+"scripts/cnamaste_port/**" = ["UP", "PLR", "SIM", "RUF"]
 
 [lint.isort]
 combine-as-imports = true

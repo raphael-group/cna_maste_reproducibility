@@ -6,8 +6,9 @@
 - `figures.write_figures` -- the three PDFs, from the tables the steps before wrote.
 
 Each metric step computes every metric, merges the per-run ones into one wide table, and writes its tables only then.
-`run_cna_maste_reproducibility.smk` runs each step as a rule, in cnamaste's environment at `$CNAMASTE_ROOT` with its
-`luo` dependency group (cnplot), `pdflatex` with `geometry`, `amsmath`, `amssymb` and `booktabs` for the tables.
+`run_cna_maste_reproducibility.smk` runs each step as a rule, in the analysis environment (`pyproject.toml`, cnplot
+included), `pdflatex` with `geometry`, `amsmath`, `amssymb` and `booktabs` for the tables. The analysis imports no
+cnamaste: what it takes from cnamaste is ported in `scripts/cnamaste_port/`.
 
 Notes/References:
     The metrics are in the benchmark's `docs/reference.md` (Metrics). The regions are the bed's

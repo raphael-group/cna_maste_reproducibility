@@ -78,8 +78,9 @@ def test_segments_are_cut_at_the_arms(tmp_path: Path) -> None:
     """A segment through chr1's centromere, on two arm regions, is drawn either side of it and nowhere in it; clone 0,
     (1, 1) throughout, is not drawn; each state is in cnamaste's profile colour, a B > A state its mirror's, lighter,
     (1,1) white; the key groups the states by BAF, ascending, a state with its phase flip, (0,0) first."""
-    pytest.importorskip("cnplot", reason="cnplot is in the luo dependency group: uv sync --group luo")
+    pytest.importorskip("cnplot", reason="cnplot is in the analysis environment: uv sync (pyproject.toml)")
     import matplotlib.colors as mcolors
+    from scripts.cnamaste_port.palette import COPY_STATES
     from scripts.plots.layout import (
         get_cnplot_segments,
         get_copy_state_colours,
@@ -88,8 +89,6 @@ def test_segments_are_cut_at_the_arms(tmp_path: Path) -> None:
         get_genome_axis,
         get_profile_clones,
     )
-
-    from cnamaste.palette import COPY_STATES
 
     (tmp_path / "regions.bed").write_text("chr1\t0\t100\tchr1p\nchr1\t150\t300\tchr1q\n")
     (tmp_path / "sizes").write_text("chr1\t300\n")
@@ -143,7 +142,7 @@ def test_spots_are_one_cell_each_whatever_their_order() -> None:
     """A 3 x 4 lattice turned 0.4 degrees, 16 um pitch, two spots missing: each spot its own cell in its own colour,
     stored as a square of equal pixels, the missing cells clear, and the image the same for the spots in reverse
     order."""
-    pytest.importorskip("cnplot", reason="cnplot is in the luo dependency group: uv sync --group luo")
+    pytest.importorskip("cnplot", reason="cnplot is in the analysis environment: uv sync (pyproject.toml)")
     from scripts.plots.layout import draw_spot_image
 
     turn = np.radians(0.4)
@@ -202,7 +201,7 @@ def test_chromosomes_without_a_cna_are_left_out(tmp_path: Path) -> None:
     """A chromosome is drawn whole where a drawn clone of any profile holds a CNA on either arm: chr1's only drawn CNA
     is an integer (2,1) on chr1p, so chr1q is drawn too; chr2 holds a state table's AMP and an integer (2,0); chr3's
     only CNA is a state table's clone 0, the normal clone, not drawn, so chr3 is left out."""
-    pytest.importorskip("cnplot", reason="cnplot is in the luo dependency group: uv sync --group luo")
+    pytest.importorskip("cnplot", reason="cnplot is in the analysis environment: uv sync (pyproject.toml)")
     from scripts.plots.layout import get_cna_regions, get_cnplot_segments, get_genome_axis
 
     (tmp_path / "regions.bed").write_text(
@@ -239,7 +238,7 @@ def test_chromosomes_without_a_cna_are_left_out(tmp_path: Path) -> None:
 def test_figures_name_a_run_by_its_method_side_and_setting_alone() -> None:
     """A figure names a run by its method, its bins' side and its `msu<k>`: a cnamaste run's id in its key is left
     out, and a CalicoST sweep run keeps its min-snp-umi."""
-    pytest.importorskip("cnplot", reason="cnplot is in the luo dependency group: uv sync --group luo")
+    pytest.importorskip("cnplot", reason="cnplot is in the analysis environment: uv sync (pyproject.toml)")
     from scripts.plots.style import get_run_label
 
     assert get_run_label("cnamaste-ac88605f", "cnamaste", 16) == get_run_label("cnamaste", "cnamaste", 16)
@@ -249,7 +248,7 @@ def test_figures_name_a_run_by_its_method_side_and_setting_alone() -> None:
 def test_cnamaste_tracks_pool_each_integer_clones_spots() -> None:
     """Fitted clones 0 and 2 merge into integer clone 0, 1 and 3 into 1: each spot's track is its integer clone's, and
     each integer clone takes its first clone's library shift; a fitted clone split over two integer clones is refused."""
-    pytest.importorskip("cnplot", reason="cnplot is in the luo dependency group: uv sync --group luo")
+    pytest.importorskip("cnplot", reason="cnplot is in the analysis environment: uv sync (pyproject.toml)")
     from scripts.plots.cnamaste_page import get_integer_fit
 
     barcodes = np.array(["s0", "s1", "s2", "s3", "s4"])
@@ -266,7 +265,7 @@ def test_cnamaste_tracks_pool_each_integer_clones_spots() -> None:
 
 def test_cnamaste_inputs_are_one_runs_integer_clones() -> None:
     """The labels must be the run's integer clones and the copies the same run's; anything else is refused."""
-    pytest.importorskip("cnplot", reason="cnplot is in the luo dependency group: uv sync --group luo")
+    pytest.importorskip("cnplot", reason="cnplot is in the analysis environment: uv sync (pyproject.toml)")
     from scripts.plots.cnamaste_page import get_cnamaste_input_mismatch
 
     run, other = Path("run_a"), Path("run_b")
@@ -278,7 +277,7 @@ def test_cnamaste_inputs_are_one_runs_integer_clones() -> None:
 def test_cnamaste_normal_fractions_are_its_logs_unless_given(tmp_path: Path) -> None:
     """Each integer clone takes the logged fraction of the fitted clone naming it, clone 0 held at 1; fractions given
     on the command line replace the log's; a clone the log leaves out is refused; run_cnamaste_plot's log is not read."""
-    pytest.importorskip("cnplot", reason="cnplot is in the luo dependency group: uv sync --group luo")
+    pytest.importorskip("cnplot", reason="cnplot is in the analysis environment: uv sync (pyproject.toml)")
     from scripts.plots.cnamaste_page import get_normal_fractions
 
     line = (

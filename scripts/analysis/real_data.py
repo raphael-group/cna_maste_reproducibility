@@ -30,6 +30,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scripts.analysis.options import RUNS, AnalysisOptions
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
 from scripts.metrics.gene_level import (
     get_autosomal_regions,
     get_gene_level_table,
@@ -55,9 +57,6 @@ from scripts.metrics.real_data_metrics import (
     read_sample_entry,
 )
 from scripts.metrics.unsupervised_metrics import compute_pairwise_clone_ARI, compute_pairwise_cnp_similarity
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
 
 logger = get_logger("scripts.analysis.real_data", start_time=start_time)
 

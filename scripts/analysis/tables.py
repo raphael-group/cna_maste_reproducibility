@@ -14,11 +14,10 @@ Outputs (under outdir):
 from __future__ import annotations
 
 from scripts.analysis.options import AnalysisOptions
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
 from scripts.metrics.latex_tables import write_latex_table
 from scripts.metrics.metric_text import write_metric_text
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
 
 logger = get_logger("scripts.analysis.tables", start_time=start_time)
 

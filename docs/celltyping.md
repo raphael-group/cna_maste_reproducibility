@@ -49,7 +49,8 @@ Under `<OUTDIR>/ovarian/celltyping/<sample>/square_016um/`:
 | `<sample>.annotated.h5ad` | log1p-normalized expression (counts in `layers["counts"]`); `obs` `cluster`, `cell_type`, `cell_type_broad`, `cluster_label`; `obsm` `X_umap`, `spatial`, `score_ulm`, `padj_ulm`; `uns["spatial"]` |
 | `dotplot__celltype_markers.pdf`, `umap_{cluster,cell_type}.pdf`, `spatial_{cluster,cell_type}.pdf` | supporting markers per cluster; the Space Ranger UMAP and the bins in place, by cluster and by cell type |
 
-The figures are drawn by `plot_celltypes.py`. It also redraws them from an existing folder alone, `python plot_celltypes.py <out_dir> --scalefactors <binned_dir>/spatial/scalefactors_json.json`, into
+The figures are drawn by `plot_celltypes.py`. It also redraws them from an existing folder alone,
+`python plot_celltypes.py <out_dir> --scalefactors <binned_dir>/spatial/scalefactors_json.json`, into
 `<out_dir>/figures-refined/`, adding Space Ranger's top features per cluster and each cluster's mean ULM score of its
 top cell types.
 
@@ -57,5 +58,7 @@ top cell types.
 
 - PanglaoDB: Franzen et al. 2019, Database, doi:[10.1093/database/baz046](https://doi.org/10.1093/database/baz046)
 - OmniPath: Turei et al. 2021, Mol Syst Biol, doi:[10.15252/msb.20209923](https://doi.org/10.15252/msb.20209923)
-- decoupler: Badia-i-Mompel et al. 2022, Bioinform Adv, doi:[10.1093/bioadv/vbac016](https://doi.org/10.1093/bioadv/vbac016); tutorial <https://decoupler.scverse.org/en/latest/notebooks/scell/rna_sc.html>
+- decoupler: Badia-i-Mompel et al. 2022, Bioinform Adv,
+  doi:[10.1093/bioadv/vbac016](https://doi.org/10.1093/bioadv/vbac016); tutorial
+  <https://decoupler.scverse.org/en/latest/notebooks/scell/rna_sc.html>
 - scanpy: Wolf et al. 2018, Genome Biol, doi:[10.1186/s13059-017-1382-x](https://doi.org/10.1186/s13059-017-1382-x)

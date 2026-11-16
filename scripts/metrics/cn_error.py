@@ -43,12 +43,11 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
 from scripts.metrics.cna_states import ProfileCopies, get_profile_copies
 from scripts.metrics.gene_level import get_max_overlap
 from scripts.metrics.read_method_input import BinCounts, MethodInput
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
 
 logger = get_logger("cn_error", start_time=start_time)
 

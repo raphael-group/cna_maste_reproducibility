@@ -26,12 +26,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yaml
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
+from scripts.cnamaste_port.truth import Truth
 from scripts.metrics.cna_states import get_field_table, get_uncalled
 from scripts.metrics.read_method_input import MethodInput, get_benchmark_path
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
-from cnamaste.truth import Truth
 
 logger = get_logger("gene_level", start_time=start_time)
 

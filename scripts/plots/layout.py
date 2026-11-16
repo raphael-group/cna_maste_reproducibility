@@ -25,11 +25,10 @@ from matplotlib.patches import Rectangle
 from matplotlib.text import Text
 from matplotlib.transforms import Affine2D, offset_copy
 from scipy.spatial import cKDTree
-
-from cnamaste.config import start_time
-from cnamaste.figure_style import CLONE_PALETTE, DPI, page_size, page_style, uniform
-from cnamaste.logger import get_logger
-from cnamaste.plot.layout import (
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.figure_style import CLONE_PALETTE, DPI, page_size, page_style, uniform
+from scripts.cnamaste_port.logger import get_logger
+from scripts.cnamaste_port.plot.layout import (
     GAP,
     MARGIN,
     TICK_LINE,
@@ -41,14 +40,14 @@ from cnamaste.plot.layout import (
     place,
     square_handle,
 )
-from cnamaste.plot.plot_copy_number_profile import (
+from scripts.cnamaste_port.plot.plot_copy_number_profile import (
     BAR_SHARE,
     OUTLINE,
     get_intervals,
     state_fill,
     used_states,
 )
-from cnamaste.utils import cast_clone_label
+from scripts.cnamaste_port.utils import cast_clone_label
 
 # NB cnplot writes its own rcParams on import (`cnplot_style.apply_style`); the context restores cnamaste's.
 with mpl.rc_context():

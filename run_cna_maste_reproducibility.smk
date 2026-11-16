@@ -180,6 +180,12 @@ CLONALSCOPE_SAMPLES = {
     "zenodo_sim": SIMS,
     "ovarian": [SAMPLE if b == 16 else f"{SAMPLE}_{b:03d}um" for b in CLONALSCOPE["ovarian"]["bins_um"]],
 }
+# NB: UGP's 16um bb summed to each coarser side an ovarian baseline runs at, a UMI page row each
+BB_COARSE = {
+    b: f"{OV_INPUTS}/{SAMPLE}/bb-{b:03d}um"
+    for b in sorted({NUMBAT["ovarian"]["bin_um"], *CLONALSCOPE["ovarian"]["bins_um"]})
+    if b != 16
+}
 CALICOST_SIMS = SIMS if CALICOST["calicost-sim"]["sims"] == "all" else list(CALICOST["calicost-sim"]["sims"])
 CALICOST_INPUTS = {name.format(sample=SAMPLE): spec for name, spec in CALICOST["ovarian"]["inputs"].items()}
 CALICOST_RUNS = {
@@ -211,11 +217,7 @@ IN_RUNNER = f"source {CONDA}/etc/profile.d/conda.sh && set +u && conda activate 
 IN_NUMBAT = in_env("NUMBAT_ENV")
 
 
-def limited(status):
-    """A shell prefix running a baseline's command under BASELINE_LIMITS, its START and END lines to `status`."""
-    return f"{LIMIT} {status} "
-
-
+# NB: `{LIMIT} <status> <command>` runs a baseline under BASELINE_LIMITS, its START and END lines to <status>
 LIMIT = f"bash {BASELINES}/common/limit.sh {MAX_WALLTIME} {MAX_RSS}"
 
 
@@ -268,19 +270,25 @@ def prepared_outputs():
         f"{OV}/numbat/{SAMPLE}/prep/{SAMPLE}.count_mat.rds",
         f"{OV}/numbat/{SAMPLE}/prep/{SAMPLE}_allele_counts.tsv.gz",
         f"{OV_INPUTS}/{SAMPLE}/cnamaste_sample_sheet.tsv",
+        *BB_COARSE.values(),
         CELLTYPES,
     ]
 
 
+def repo_root(repo):
+    """The root of `repo`, a key of REPOS, or this repository for `REPO` (its pyproject.toml and uv.lock)."""
+    return REPO if repo == "REPO" else REPOS[repo]
+
+
 def uv_run(env, repo):
     """`uv run` in `env`, the uv environment of `repo`, without syncing it."""
-    return f"UV_PROJECT_ENVIRONMENT={ENVS[env]} {BIN}/uv run --no-sync --project {REPOS[repo]}"
+    return f"UV_PROJECT_ENVIRONMENT={ENVS[env]} {BIN}/uv run --no-sync --project {repo_root(repo)}"
 
 
 UV_CNAMASTE = (
     " ".join(f"{key}={home}" for key, home in NATIVE_HOMES.items()) + " " + uv_run("CNAMASTE_ENV", "CNAMASTE_REPO")
 )
-UV_ANALYSIS = uv_run("CNAMASTE_ANALYSIS_ENV", "CNAMASTE_ANALYSIS_REPO")
+UV_ANALYSIS = uv_run("ANALYSIS_ENV", "REPO")
 
 shell.prefix(f"set -euo pipefail; mkdir -p {TMP}; export TMPDIR={TMP}; ")
 
@@ -301,7 +309,6 @@ wildcard_constraints:
 ##################################################
 # Targets
 
-ANALYSIS_ROOT = REPOS["CNAMASTE_ANALYSIS_REPO"]
 RESULTS = f"{OUT}/benchmark_results"
 # NB: AnalysisOptions' default names (scripts/analysis/options.py)
 SIM_DATASET = "calicost-sim"
@@ -428,10 +435,11 @@ rule clone_repo:
 
 
 def env_repo(env):
-    """The repository an environment is built from, or None."""
+    """The repository an environment is built from, or None (this repository, `uv:REPO`, needs no clone)."""
     recipe = C["ENV_RECIPES"][env]
     if recipe.startswith("uv:"):
-        return recipe.split(":")[1]
+        repo = recipe.split(":")[1]
+        return None if repo == "REPO" else repo
     return {"CALICOST_ENV": "CALICOST_REPO", "CLONALSCOPE_ENV": "CLONALSCOPE_REPO"}.get(
         env, next((key for key in REPOS if "{" + key + "}" in recipe), None)
     )
@@ -442,7 +450,8 @@ def env_command(env):
 
     An existing uv environment must match its repository's uv.lock (`uv sync --check`); it is never modified, so a
     mismatch stops setup. A missing environment is built only where nothing is at its path, and a failed build is
-    removed, so a partial environment is never taken as built by a later run.
+    removed, so a partial environment is never taken as built by a later run. A missing uv environment is built on this
+    workflow's own Python (CNA_MASTE_REPRODUCIBILITY_ENV's 3.12), so uv needs no interpreter on PATH and downloads none.
     """
     path, recipe = ENVS[env], C["ENV_RECIPES"][env]
     not_env = (
@@ -451,11 +460,13 @@ def env_command(env):
     if recipe.startswith("uv:"):
         _, repo, *group = recipe.split(":")
         groups = " ".join(f"--group {g}" for g in group)
-        sync = f"UV_PROJECT_ENVIRONMENT={path} {BIN}/uv sync --project {REPOS[repo]} --locked --all-extras {groups}"
+        root = repo_root(repo)
+        sync = f"UV_PROJECT_ENVIRONMENT={path} {BIN}/uv sync --project {root} --locked --all-extras {groups}"
         return (
             f"if [ -x {path}/bin/python ]; then {sync} --check || "
-            f"{{ echo '{path} does not match {REPOS[repo]}/uv.lock: uv sync it, or set {env} to another prefix' >&2; "
-            f"exit 1; }}; else [ ! -e {path} ] || {not_env}; {sync} || {{ rm -rf {path}; exit 1; }}; fi"
+            f"{{ echo '{path} does not match {root}/uv.lock: uv sync it, or set {env} to another prefix' >&2; "
+            f"exit 1; }}; else [ ! -e {path} ] || {not_env}; {sync} --python {sys.executable} || "
+            f"{{ rm -rf {path}; exit 1; }}; fi"
         )
     command = (
         f"if [ -d {path}/conda-meta ]; then echo '{path} exists'; else [ ! -e {path} ] || {not_env}; "
@@ -868,6 +879,22 @@ rule ovarian_format_bb:
         "--barcode-mappings {OUTS}/barcode_mappings.parquet > {log} 2>&1"
 
 
+# NB: UGP's 16um bb summed to a coarser side, its bins Numbat's and Clonalscope's (the same (r // k, c // k) rule)
+rule ovarian_bb_coarse:
+    input:
+        f"{SETUP}/CELLTYPING_ENV.ok",
+        h5ad=UGP_OUTPUTS["h5ad"],
+    output:
+        directory(f"{OV_INPUTS}/{SAMPLE}/bb-{{bin_um}}um"),
+    log:
+        f"{LOGS}/prepare/ovarian_bb_{{bin_um}}um.log",
+    wildcard_constraints:
+        bin_um=r"\d{3}",
+    shell:
+        "{ENVS[CELLTYPING_ENV]}/bin/python {REPO}/scripts/utils/aggregate_bb.py --bb-dir {UGP_DIR}/bb "
+        "--assay VISIUM3prime --bin-um {wildcards.bin_um} --out-dir {output} > {log} 2>&1"
+
+
 rule ovarian_cnamaste_sample_sheet:
     input:
         BB16,
@@ -1134,11 +1161,15 @@ def cnamaste_over_rides(solver, seed):
 def run_cnamaste(on_failure):
     """One run_cnamaste, its run's id written to the output; `on_failure` the shell run where it exits non-zero.
 
-    A run writes run_<id>/ under paths.output_dir; its id is read from the one config_<id>.yaml it wrote.
+    A run writes run_<id>/ under paths.output_dir; its id is read from the one config_<id>.yaml it wrote. Every thread
+    pool is set to the rule's threads, BLAS's included: the `calicost` initializer's start (CalicoST's
+    `initialization_by_gmm`) can land elsewhere at another BLAS thread count, and OpenBLAS would otherwise take a
+    count the user's shell exports.
     """
     return (
         "mkdir -p {params.od}; started=$(mktemp {params.od}/.started.XXXXXX); trap 'rm -f \"$started\"' EXIT; "
-        "rc=0; OMP_NUM_THREADS={threads} NUMBA_NUM_THREADS={threads} " + UV_CNAMASTE + " run_cnamaste {input.config} "
+        "rc=0; OMP_NUM_THREADS={threads} NUMBA_NUM_THREADS={threads} OPENBLAS_NUM_THREADS={threads} "
+        "MKL_NUM_THREADS={threads} " + UV_CNAMASTE + " run_cnamaste {input.config} "
         "-o paths.sample_sheet={input.sheet} -o paths.output_dir={params.od} {params.over_rides} > {log} 2>&1 "
         "|| rc=$?; if [ $rc -ne 0 ]; then " + on_failure + "; fi; "
         "find {params.od} -mindepth 2 -maxdepth 2 -path '*/run_*/config_*.yaml' -newer \"$started\" "
@@ -1344,6 +1375,7 @@ rule benchmark_yaml:
         rules.run_methods.input,
         CELLTYPES,
         f"{OV}/cnamaste/plot.done",
+        BB_COARSE.values(),
     output:
         benchmark=f"{CFG}/benchmark.yaml",
         config=f"{CFG}/config.yaml",
@@ -1364,7 +1396,7 @@ rule benchmark_yaml:
                 "dir": UGP_DIR,
                 "spots": UGP_OUTPUTS["spots"],
                 "spaceranger_dir": B16,
-                "bb_dir": {16: f"{UGP_DIR}/bb"},
+                "bb_dir": {16: f"{UGP_DIR}/bb", **BB_COARSE},
             },
             "numbat": {"dir": f"{OV}/numbat/{SAMPLE}/{numbat}/run_numbat"},
             **calicost_runs,
@@ -1467,30 +1499,30 @@ rule analysis_options:
                 **figure_options(benchmark_yaml),
             },
         )
-        shell('echo "cnamaste: {ANALYSIS_ROOT} ($(git -C {ANALYSIS_ROOT} describe --always --dirty))" > {log}')
+        shell('echo "analysis: {REPO} ($(git -C {REPO} describe --always --dirty))" > {log}')
 
 
 def analysis_step(module, function):
     """The shell command of one analysis step: scripts.analysis.<module>.<function> on the analysis options, in the
-    cnamaste analysis environment, its outputs' directories made first."""
+    analysis environment, its outputs' directories made first. The analysis imports no cnamaste
+    (scripts/cnamaste_port/)."""
     return (
         f"mkdir -p {RESULTS}/tsvs/gene_level_cnp {RESULTS}/text {RESULTS}/plots {RESULTS}/pdf-pages; "
-        f"CNAMASTE_ROOT={ANALYSIS_ROOT} PYTHONPATH={ANALYSIS_ROOT}/python:{REPO} {UV_ANALYSIS} "
+        f"PYTHONPATH={REPO} {UV_ANALYSIS} "
         "python - > {log} 2>&1 <<'EOF'\n"
-        "from scripts.analysis.options import get_cnamaste_root, read_options\n"
+        "from scripts.analysis.options import read_options\n"
         f"from scripts.analysis.{module} import {function}\n"
-        "get_cnamaste_root()\n"
         f"{function}(read_options('{{input.options}}'))\n"
         "EOF"
     )
 
 
-ANALYSIS_ENV = [f"{SETUP}/CNAMASTE_ANALYSIS_REPO.ok", f"{SETUP}/CNAMASTE_ANALYSIS_ENV.ok"]
+ANALYSIS_SETUP = [f"{SETUP}/ANALYSIS_ENV.ok"]
 
 
 rule analysis_simulation_metrics:
     input:
-        ANALYSIS_ENV,
+        ANALYSIS_SETUP,
         options=rules.analysis_options.output[0],
     output:
         [f"{RESULTS}/tsvs/{SIM_DATASET}.tsv.gz", f"{RESULTS}/tsvs/{SIM_DATASET}.median.tsv.gz"],
@@ -1504,7 +1536,7 @@ rule analysis_simulation_metrics:
 
 rule analysis_real_data_metrics:
     input:
-        ANALYSIS_ENV,
+        ANALYSIS_SETUP,
         options=rules.analysis_options.output[0],
     output:
         [f"{RESULTS}/tsvs/{REAL_DATASET}.tsv.gz", f"{RESULTS}/tsvs/{REAL_DATASET}.json"],
@@ -1518,7 +1550,7 @@ rule analysis_real_data_metrics:
 
 rule analysis_tables:
     input:
-        ANALYSIS_ENV,
+        ANALYSIS_SETUP,
         rules.analysis_simulation_metrics.output,
         rules.analysis_real_data_metrics.output,
         options=rules.analysis_options.output[0],
@@ -1534,7 +1566,7 @@ rule analysis_tables:
 
 rule analysis_figures:
     input:
-        ANALYSIS_ENV,
+        ANALYSIS_SETUP,
         rules.analysis_simulation_metrics.output,
         rules.analysis_real_data_metrics.output,
         options=rules.analysis_options.output[0],

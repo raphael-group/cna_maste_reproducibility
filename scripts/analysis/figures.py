@@ -40,6 +40,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scripts.analysis.options import AnalysisOptions
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.he import slide_image_and_meta
+from scripts.cnamaste_port.io import get_spatial_positions
+from scripts.cnamaste_port.logger import get_logger
+from scripts.cnamaste_port.platforms.visium import get_visiumhd_microns_per_pixel, pixel_physical
+from scripts.cnamaste_port.qa.metrics import read_labels
 from scripts.metrics.outputs import get_table_path, write_table
 from scripts.metrics.qc_metrics import get_false_positive_tumor
 from scripts.metrics.read_method_input import (
@@ -83,13 +89,6 @@ from scripts.plots.pages import (
 from scripts.plots.run_comparison import get_run_comparison_panels
 from scripts.plots.style import get_run_labels
 from scripts.plots.umi import plot_false_positive_umi, plot_umi_page
-
-from cnamaste.config import start_time
-from cnamaste.he import slide_image_and_meta
-from cnamaste.io import get_spatial_positions
-from cnamaste.logger import get_logger
-from cnamaste.platforms.visium import get_visiumhd_microns_per_pixel, pixel_physical
-from cnamaste.qa.metrics import read_labels
 
 logger = get_logger("scripts.analysis.figures", start_time=start_time)
 

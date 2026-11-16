@@ -30,6 +30,9 @@ from typing import Any
 
 import pandas as pd
 import yaml
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
+from scripts.cnamaste_port.truth import Truth, read_truth
 from scripts.metrics.gene_level import (
     get_gene_level_table,
     get_gene_profile,
@@ -46,10 +49,6 @@ from scripts.metrics.supervised_metrics import (
     compute_supervised_metrics,
     get_supervised_metrics,
 )
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
-from cnamaste.truth import Truth, read_truth
 
 logger = get_logger("simulation_metrics", start_time=start_time)
 

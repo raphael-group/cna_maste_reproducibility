@@ -33,6 +33,8 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
 from scripts.metrics.cna_states import get_cna_states, get_uncalled
 from scripts.metrics.gene_level import get_chromosomes
 from scripts.metrics.read_method_input import (
@@ -42,9 +44,6 @@ from scripts.metrics.read_method_input import (
     get_normal_type,
     get_run_name,
 )
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
 
 logger = get_logger("qc_metrics", start_time=start_time)
 

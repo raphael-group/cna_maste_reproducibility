@@ -1,0 +1,41 @@
+# The analysis environment (ANALYSIS_ENV, recipe `uv:REPO`): the analysis step and the tests, run on this repository
+# alone. What the analysis takes from cnamaste is ported in scripts/cnamaste_port/, so no cnamaste is installed; the
+# versions are those the analysis ran with in cna_maste's environment at 42b96ff (its uv.lock), uv.lock pinning the rest.
+[project]
+name = "cna-maste-reproducibility"
+version = "0.1.0"
+description = "The analysis of the cna_maste benchmark: metrics, tables and figures from the runs"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "anndata==0.13.3.post0",
+    "cnplot",
+    "matplotlib==3.11.2",
+    "numba==0.67.0",
+    "numpy==2.5.4",
+    "pandas==2.3.3",
+    "polars==1.44.2",
+    "pyarrow==26.0.0",
+    "pyyaml==6.0.3",
+    "scikit-learn==1.9.1",
+    "scipy==1.18.1",
+    "seaborn==0.13.2",
+]
+
+[dependency-groups]
+dev = ["pytest==9.2.0"]
+
+[tool.uv]
+package = false
+# NB: the indirect dependencies at the versions of cna_maste's environment at 42b96ff, where uv would resolve newer
+constraint-dependencies = [
+    "pydantic==2.14.2",
+    "pydantic-core==2.50.2",
+    "pydantic-settings==2.16.2",
+    "python-dateutil==3.0.0",
+    "threadpoolctl==3.7.0",
+    "typing-inspection==0.4.4",
+]
+
+[tool.uv.sources]
+# NB: cnplot at cc5bbd7 (0.1.1b2), as cna_maste's `luo` group pins it; not on PyPI
+cnplot = { git = "https://github.com/raphael-group/cnplot", rev = "cc5bbd7" }

@@ -25,6 +25,8 @@ from typing import Any
 
 import pandas as pd
 import yaml
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.logger import get_logger
 from scripts.metrics.cn_error import get_cn_error_table
 from scripts.metrics.cna_states import (
     get_cna_states,
@@ -62,9 +64,6 @@ from scripts.metrics.unsupervised_metrics import (
     compute_cna_confusion,
     get_shared_spots,
 )
-
-from cnamaste.config import start_time
-from cnamaste.logger import get_logger
 
 logger = get_logger("real_data_metrics", start_time=start_time)
 

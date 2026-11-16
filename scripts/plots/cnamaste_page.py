@@ -20,27 +20,11 @@ import pandas as pd
 from matplotlib.collections import PathCollection
 from matplotlib.colors import to_rgb
 from matplotlib.figure import Figure
-from scripts.plots.layout import (
-    AXIS_LABEL_LINE,
-    count_covered_spots,
-    draw_copy_profile,
-    draw_inside_key,
-    draw_labels,
-    draw_panel_letter,
-    get_alternate_tick_labels,
-    get_axis_label_size,
-    get_clone_colours,
-    get_clone_names,
-    get_label_left,
-    get_text_extent,
-    set_text_sizes,
-)
-
-from cnamaste.config import start_time
-from cnamaste.figure_style import DPI, page_size, page_style
-from cnamaste.logger import get_logger
-from cnamaste.palette import TRACK_NORMAL
-from cnamaste.plot.layout import (
+from scripts.cnamaste_port.config import start_time
+from scripts.cnamaste_port.figure_style import DPI, page_size, page_style
+from scripts.cnamaste_port.logger import get_logger
+from scripts.cnamaste_port.palette import TRACK_NORMAL
+from scripts.cnamaste_port.plot.layout import (
     GAP,
     LETTER,
     MARGIN,
@@ -57,9 +41,24 @@ from cnamaste.plot.layout import (
     place,
     track_furniture,
 )
-from cnamaste.plot.plot_genomic import plot_clones_genomic
-from cnamaste.spatio_genomic_counts import SpatioGenomicCounts, from_npz
-from cnamaste.utils import cast_clone_label
+from scripts.cnamaste_port.plot.plot_genomic import plot_clones_genomic
+from scripts.cnamaste_port.spatio_genomic_counts import SpatioGenomicCounts, from_npz
+from scripts.cnamaste_port.utils import cast_clone_label
+from scripts.plots.layout import (
+    AXIS_LABEL_LINE,
+    count_covered_spots,
+    draw_copy_profile,
+    draw_inside_key,
+    draw_labels,
+    draw_panel_letter,
+    get_alternate_tick_labels,
+    get_axis_label_size,
+    get_clone_colours,
+    get_clone_names,
+    get_label_left,
+    get_text_extent,
+    set_text_sizes,
+)
 
 logger = get_logger("cnamaste_page", start_time=start_time)
 
