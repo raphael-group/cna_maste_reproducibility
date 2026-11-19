@@ -159,7 +159,7 @@ def plot_cn_error(errors: pd.DataFrame, title: str, names: dict[str, str]) -> Fi
     panel makes it.
 
     Args:
-        errors: `run`, `method` and `cn_error.get_cn_error_columns()` per run.
+        errors: `run`, `method` and `cn_error.CN_ERROR_COLUMNS` per run.
         title: the figure's title.
         names: each run's name (`get_run_labels`).
 

@@ -1,5 +1,6 @@
 """Ported from cna_maste `python/cnamaste/truth.py` at 42b96ff (2026-11-01):
-the definitions this repository's analysis reaches, verbatim, with their imports pointed at `scripts.cnamaste_port`.
+the definitions this repository's analysis reaches, verbatim less the methods it never calls, with their imports
+pointed at `scripts.cnamaste_port`.
 
 The truth for a simulated sample: its true clones, their spot coordinates and allele-specific copies.
 """
@@ -37,25 +38,6 @@ class Truth:
     @property
     def n_clones(self) -> int:
         return len(self.clones)
-
-    def copies_at(self, chromosome: np.ndarray, position: np.ndarray) -> np.ndarray:
-        """True `(A, B)` at each position; `-1` where no segment covers it.
-
-        Args: `chromosome`, `position` (n,) loci.
-        Returns: `(n, n_clones, 2)` copies.
-        """
-        chrom = self.profile["chr"].astype(str).str.removeprefix("chr").to_numpy()
-        starts, ends = self.profile["start"].to_numpy(), self.profile["end"].to_numpy()
-        found = np.full(position.size, -1)
-        query = np.asarray(chromosome).astype(str)
-        for row in range(len(self.profile)):
-            found[(query == chrom[row]) & (position >= starts[row]) & (position < ends[row])] = row
-        copies = np.full((position.size, self.n_clones, 2), -1, dtype=np.int64)
-        kept = found >= 0
-        for label, clone in enumerate(self.clones):
-            for allele, column in enumerate(("A", "B")):
-                copies[kept, label, allele] = self.profile[f"{clone}_{column}_copy"].to_numpy()[found[kept]]
-        return copies
 
 
 def _truth_table(sample: Path | Mapping[str, bytes], name: str, **kwargs: Any) -> pd.DataFrame:

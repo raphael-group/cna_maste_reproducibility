@@ -1,17 +1,16 @@
 """Ported from cna_maste `python/cnamaste/spatio_genomic_counts.py` at 42b96ff (2026-11-01):
-the definitions this repository's analysis reaches, verbatim, with their imports pointed at `scripts.cnamaste_port`.
+the definitions this repository's analysis reaches, verbatim less the methods it never calls, with their imports
+pointed at `scripts.cnamaste_port`.
 
 Per-spot arrays `(n_obs, n_spots)`, dense or CSR: `SpatioGenomicCounts`, and `single_X` as `SpatioGenomicPairCounts`.
 
 `SpatioGenomicCounts` is one per-spot quantity, `(n_obs, n_spots)`: a read depth, an allele count, a baseline.
 `SpatioGenomicPairCounts` is `single_X`, `(n_obs, 2, n_spots)`: two `SpatioGenomicCounts`, read depth (`rdr`, channel 0)
-and B allele count (`baf`, channel 1), in one backing. `.rdr` and `.baf` return the
-`SpatioGenomicCounts`; `with_rdr` and `without_rdr` swap the read-depth channel.
+and B allele count (`baf`, channel 1), in one backing. `.rdr` and `.baf` return the `SpatioGenomicCounts`.
 
 A run builds them as CSR; a capture records them dense, and its replays hand them back dense.
 Every operation computes the same bits on both backings: sums in numpy's order (segments in sequence on `axis=0`,
-spots pairwise on `axis=1`) and maps that keep zero at zero. The fused map-sums a kernel folds over a row are
-`cnamaste.sparse`'s.
+spots pairwise on `axis=1`).
 """
 
 from __future__ import annotations
@@ -161,7 +160,7 @@ class SpatioGenomicCounts:
     ndim = 2
 
     def __init__(self, values: Any) -> None:
-        # NB a dense array kept as given: a spot-major view (`by_spot`) is no copy, and `sum` keeps numpy's order.
+        # NB a dense array kept as given: `sum` keeps numpy's order.
         self.values = canonical(values) if sp.issparse(values) else np.asarray(values)
 
     @classmethod
@@ -179,92 +178,6 @@ class SpatioGenomicCounts:
     @property
     def dtype(self) -> np.dtype:
         return self.values.dtype
-
-    def toarray(self) -> np.ndarray:
-        return self.values.toarray() if self.sparse else self.values.copy()
-
-    def like(self, values: Any) -> SpatioGenomicCounts:
-        """Return `values` in this array's backing.
-
-        Args: `values` an array of this shape.
-        Returns: a `SpatioGenomicCounts`.
-        """
-        if self.sparse:
-            return SpatioGenomicCounts(sp.csr_matrix(values))
-        return SpatioGenomicCounts(values.toarray() if sp.issparse(values) else values)
-
-    def zeros(self, dtype: Any = np.float64) -> SpatioGenomicCounts:
-        """Return zeros of this shape in this backing; a dense-backed run's unset baseline stays dense zeros.
-
-        Args: `dtype` of the zeros.
-        Returns: a `SpatioGenomicCounts`.
-        """
-        return SpatioGenomicCounts(
-            sp.csr_matrix(self.shape, dtype=dtype) if self.sparse else np.zeros(self.shape, dtype=dtype)
-        )
-
-    def astype(self, dtype: Any) -> SpatioGenomicCounts:
-        """Cast as numpy casts: a float to an integer truncated, as assignment into an integer array.
-
-        Args: `dtype` the target.
-        Returns: a `SpatioGenomicCounts`.
-        """
-        if self.sparse:
-            m = self.values.copy()
-            m.data = m.data.astype(dtype)
-            return SpatioGenomicCounts(m)
-        return SpatioGenomicCounts(self.values.astype(dtype))
-
-    def rows(self, index: Any) -> SpatioGenomicCounts:
-        return SpatioGenomicCounts(self.values[index, :])
-
-    def spots(self, index: Any) -> SpatioGenomicCounts:
-        return SpatioGenomicCounts(self.values[:, index])
-
-    def zero_rows(self, index: Any) -> SpatioGenomicCounts:
-        """Set rows `index` to 0, in a new array.
-
-        Args: `index` the rows.
-        Returns: a `SpatioGenomicCounts`.
-        """
-        if self.sparse:
-            keep = np.ones(self.shape[0], dtype=self.dtype)
-            keep[index] = 0
-            return SpatioGenomicCounts(sp.diags(keep, format="csr", dtype=self.dtype) @ self.values)
-        out = self.values.copy()
-        out[index, :] = 0
-        return SpatioGenomicCounts(out)
-
-    def product(self, left: Any) -> SpatioGenomicCounts:
-        """Compute `left @ self` for integer counts, exact in any order.
-
-        Args: `left` a sparse integer `(n, n_obs)`, an incidence or a selection.
-        Returns: a `SpatioGenomicCounts` `(n, n_spots)`.
-        """
-        if self.dtype.kind not in "iu":
-            raise TypeError("product of float values: its order is not numpy's.")
-        out = left @ self.values
-        return SpatioGenomicCounts(out if self.sparse else np.asarray(out, dtype=self.dtype))
-
-    def __add__(self, other: SpatioGenomicCounts) -> SpatioGenomicCounts:
-        return self.like(self.values + other.values) if self.dtype.kind in "iu" else NotImplemented
-
-    def __sub__(self, other: SpatioGenomicCounts) -> SpatioGenomicCounts:
-        return self.like(self.values - other.values) if self.dtype.kind in "iu" else NotImplemented
-
-    def map(self, f: Any) -> SpatioGenomicCounts:
-        """Apply `f` elementwise; on CSR to the stored entries only, so `f(0)` must be 0.
-
-        Args: `f` a numpy ufunc or vectorized callable.
-        Returns: a `SpatioGenomicCounts`.
-        """
-        if not self.sparse:
-            return SpatioGenomicCounts(f(self.values))
-        if f(np.zeros(1, self.dtype))[0] != 0:
-            raise ValueError("map of CSR: f(0) != 0, the result is dense.")
-        m = self.values.copy()
-        m.data = f(m.data)
-        return SpatioGenomicCounts(m)
 
     def sum(self, axis: int | None = None) -> Any:
         """Compute `np.sum(values, axis)` bitwise on either backing.
@@ -308,9 +221,6 @@ class SpatioGenomicCounts:
             return np.asarray(sub.sum(axis=1, dtype=self.dtype)).ravel()
         return _row_sums_in_sequence(sub.indptr, sub.indices, sub.data.astype(np.float64))
 
-    def mean(self) -> float:
-        return float(np.mean(self.values)) if not self.sparse else float(self.sum()) / (self.shape[0] * self.shape[1])
-
     def count_positive(self, axis: int | None = None) -> Any:
         """Compute `(values > 0).sum(axis)`.
 
@@ -330,27 +240,6 @@ class SpatioGenomicCounts:
             if m.nnz
             else np.zeros(m.shape[0], np.int64)
         )
-
-    def is_zero(self) -> bool:
-        return self.values.count_nonzero() == 0 if self.sparse else bool(np.all(self.values == 0))
-
-    def by_spot(self) -> Any:
-        """Return spot-major values: CSR `(n_spots, n_obs)`, or the dense array's transposed view (no copy).
-
-        Returns: the `(n_spots, n_obs)` array.
-        """
-        return canonical(self.values.T) if self.sparse else self.values.T
-
-    def ratio(self, other: Any, fill_value: float = np.nan) -> np.ndarray:
-        """Return this array over `other`, dense; a ratio is undefined, not zero, where `other` is zero.
-
-        Args: `other` the `(n_obs, n_spots)` denominator, a `SpatioGenomicCounts`, CSR or dense array; `fill_value` for
-        undefined ratios.
-        Returns: the `(n_obs, n_spots)` ratio.
-        """
-        with np.errstate(divide="ignore", invalid="ignore"):
-            ratio = self.toarray() / as_dense_array(other)
-        return np.nan_to_num(ratio, nan=fill_value)
 
 
 class SpatioGenomicPairCounts:
@@ -381,37 +270,8 @@ class SpatioGenomicPairCounts:
         return cls(x[:, 0, :], x[:, 1, :])
 
     @property
-    def sparse(self) -> bool:
-        return self.rdr.sparse
-
-    @property
     def shape(self) -> tuple[int, int, int]:
         return (self.rdr.shape[0], 2, self.rdr.shape[1])
-
-    @property
-    def dtype(self) -> np.dtype:
-        return self.rdr.dtype
-
-    def toarray(self) -> np.ndarray:
-        out = np.zeros(self.shape, dtype=self.dtype)
-        out[:, 0, :] = self.rdr.toarray()
-        out[:, 1, :] = self.baf.toarray()
-        return out
-
-    def rows(self, index: Any) -> SpatioGenomicPairCounts:
-        return SpatioGenomicPairCounts(self.rdr.rows(index), self.baf.rows(index))
-
-    def with_rdr(self, rdr: Any) -> SpatioGenomicPairCounts:
-        """Replace channel 0 by `rdr` in this backing, cast to this dtype as assignment into the dense array casts.
-
-        Args: `rdr` `(n_obs, n_spots)`.
-        Returns: a new `SpatioGenomicPairCounts`.
-        """
-        rdr = SpatioGenomicCounts.of(rdr)
-        return SpatioGenomicPairCounts(self.baf.like(rdr.astype(self.dtype).values), self.baf)
-
-    def without_rdr(self) -> SpatioGenomicPairCounts:
-        return SpatioGenomicPairCounts(self.rdr.zeros(self.dtype), self.baf)
 
     def spot_sums(self, idx: Any = None) -> np.ndarray:
         """Compute `np.sum(single_X[:, :, idx], axis=-1)`.
@@ -420,17 +280,6 @@ class SpatioGenomicPairCounts:
         Returns: the `(n_obs, 2)` sums.
         """
         return np.stack([self.rdr.spot_sums(idx), self.baf.spot_sums(idx)], axis=1)
-
-
-def as_dense_array(a: Any) -> Any:
-    """Return `a` as the dense array a capture records.
-
-    Args: `a` a `SpatioGenomicPairCounts` (to `(n_obs, 2, n_spots)`), `SpatioGenomicCounts`, CSR or array.
-    Returns: the dense array.
-    """
-    if isinstance(a, (SpatioGenomicPairCounts, SpatioGenomicCounts)):
-        return a.toarray()
-    return a.toarray() if sp.issparse(a) else a
 
 
 NPZ_CHANNELS = ("rdr", "baf")

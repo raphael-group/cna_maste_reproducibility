@@ -70,12 +70,6 @@ CN_ERROR_COLUMNS = (
 diploid prediction's error `null_<channel>` and its skill score."""
 
 
-def get_cn_error_columns() -> tuple[str, ...]:
-    """Get the error table's columns: `run`, `#clones`, `#tumor-clones`, `#spots`, then per channel, RDR then BAF, its
-    bins scored (`#rdr-bins`; `#baf-bins`, `#flipped-bins`), `mse_`, `null_` and `ss_`."""
-    return CN_ERROR_COLUMNS
-
-
 def get_baseline(counts: sp.csr_matrix, reference: np.ndarray) -> np.ndarray:
     """Get each bin's read-depth baseline: its UMI over the reference spots' UMI (`compute_baseline_proportions`).
 
@@ -349,7 +343,7 @@ def get_cn_error_table(
         reference: the reference spots, whose UMI give the baseline.
 
     Returns:
-        `get_cn_error_columns()`, a row per run in `runs`' order, BAF's NaN and 0 for a run with no allele copies.
+        `CN_ERROR_COLUMNS`, a row per run in `runs`' order, BAF's NaN and 0 for a run with no allele copies.
     """
     baseline = get_baseline(bins.x_counts, bins.spots.isin(reference))
     rdr, baf, altered = {}, {}, []

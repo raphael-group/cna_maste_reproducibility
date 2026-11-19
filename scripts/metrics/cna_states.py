@@ -1,7 +1,6 @@
 """A run's clone profile as CNA states and fields, per segment or gene, for every method alike.
 
-- `get_cna_states`, `get_uncalled`, `get_unknown` -- the six CNA states, and the marks of no call and of no pair;
-- `get_tcn_states` -- the three CNA states of total copies alone;
+- `get_cna_states`, `get_uncalled` -- the six CNA states, and the mark of no call;
 - `get_profile_fields` -- the fields each method's profile gives, `ascn`, `Uest`, `tcn`, `state` and `tcn_state`;
 - `get_ab_states` -- phase-free AB pairs as CNA states;
 - `get_called_states` -- a run's CNA state per segment and clone;
@@ -26,7 +25,7 @@ Each method's fields per clone:
 
 - an AB-pair profile (cnamaste, CalicoST, a simulation's truth): `ascn` `A|B` as the table phases it, `tcn` `A + B`,
   `state` of the phase-free pair;
-- Numbat, states: `state`; `ascn` and `tcn` the state's one pair where it has one (`get_numbat_pairs`), `unknown` for
+- Numbat, states: `state`; `ascn` and `tcn` the state's one pair where it has one (`NUMBAT_PAIRS`), `unknown` for
   `amp` and `bamp`;
 - Clonalscope, total copies: `Uest`, its cluster's mean coverage fold change per region (`AssignCluster`'s "Uest":
   "Average fold changes of all regions for each identify subclone/cluster", Clonalscope 07dd0c5 `R/AssignCluster.R`),
@@ -66,9 +65,6 @@ TCN_STATE_OF = {"neu": "neu", "cnloh": "neu", "del": "del", "bdel": "del", "amp"
 """Each CNA state's state of total copies alone: its total copies at 2 (`neu`, `cnloh`), below (`del`, `bdel`) or
 above (`amp`, `bamp`)."""
 
-FIELDS = ("ascn", "Uest", "tcn", "state", "tcn_state")
-"""A profile's fields, in the gene-level table's order."""
-
 NUMBAT_PAIRS = {"neu": (1, 1), "del": (1, 0), "cnloh": (2, 0), "bdel": (0, 0)}
 """The Numbat states of one AB pair, its `l11_x`, `l10_x`, `l20_x` and `l00_x` states; `amp` is 2:1 or 3:1, and
 `bamp` is left unknown."""
@@ -89,24 +85,9 @@ def get_cna_states() -> tuple[str, ...]:
     return CNA_STATES
 
 
-def get_tcn_states() -> tuple[str, ...]:
-    """Get the CNA states of total copies alone, `neu`, `del` and `amp`, in table order."""
-    return TCN_STATES
-
-
 def get_uncalled() -> str:
     """Get the mark of a field the run calls nothing on, `uncalled`."""
     return UNCALLED
-
-
-def get_unknown() -> str:
-    """Get the mark of a Numbat state's `ascn` and `tcn` where the state is not one pair, `unknown`."""
-    return UNKNOWN
-
-
-def get_numbat_pairs() -> dict[str, tuple[int, int]]:
-    """Get the AB pair of each Numbat state that is one pair: `neu`, `del`, `cnloh` and `bdel`."""
-    return dict(NUMBAT_PAIRS)
 
 
 def get_clone_count(profile: pd.DataFrame) -> int:
@@ -123,7 +104,7 @@ def get_clone_count(profile: pd.DataFrame) -> int:
 
 
 def get_profile_fields(profile: pd.DataFrame) -> tuple[str, ...]:
-    """Get the fields a profile gives, in `FIELDS`' order.
+    """Get the fields a profile gives, in the gene-level table's order.
 
     Args:
         profile: a `MethodInput.profile`: AB pairs, Clonalscope's states with `clone<k> Uest`, or Numbat's states.

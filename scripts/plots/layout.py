@@ -1,14 +1,13 @@
 """`plot_annotation_page`: one Visium HD sample's H&E slide, cell types and each method's clones, and each method's clone
 profile on cnplot's `GenomeAxis`, together or a page each; a method not run is a placeholder. Integer copies are
 drawn in cnamaste's profile colours (`cnamaste.palette`, `plot_copy_number_profile.state_fill`), (1,1) white
-(`NEUTRAL_COPY_COLOUR`). `get_cna_regions` and `get_genome_axis` give an axis on the regions where a profile holds a
-CNA. `plot_profile_page`: each method's clone profile on one set of bins as cnamaste's own page draws its profile
-(`plot_copy_number_profile.plot_state_profile`; `draw_state_profile`, `draw_copy_profile`), beside panels it is given.
+(`NEUTRAL_COPY_COLOUR`). `plot_profile_page`: each method's clone profile on one set of bins as cnamaste's own page
+draws its profile (`plot_copy_number_profile.plot_state_profile`; `draw_state_profile`, `draw_copy_profile`), beside
+panels it is given.
 """
 
 from __future__ import annotations
 
-import io
 import re
 import string
 from collections.abc import Callable
@@ -180,53 +179,16 @@ FALSE_POSITIVE_COLOUR = "#2a78d6"
 tritan simulation (Machado et al. 2009, doi:10.1109/TVCG.2009.113)."""
 
 
-def get_genome_axis(region_bed: str, chrom_sizes: str, regions: pd.DataFrame | None = None) -> GenomeAxis:
+def get_genome_axis(region_bed: str, chrom_sizes: str) -> GenomeAxis:
     """cnplot's genome axis on `region_bed`'s regions of `chrom_sizes`' chromosomes, in its order, the stretches between
-    regions collapsed, X, Y and M left out (cnplot's `DEFAULT_EXCLUDED_CHROMS`). With `regions`, on those alone.
+    regions collapsed, X, Y and M left out (cnplot's `DEFAULT_EXCLUDED_CHROMS`).
 
     Args: `region_bed` the regions, e.g. `data/hg38.regions.bed`, a chromosome's
         arms; `chrom_sizes` a headerless `<chromosome> <length>` file, e.g.
-        `data/hg38.chrom.sizes`; `regions` rows of the axis' `regions`, `#CHR`,
-        `START`, `END`, `NAME`, e.g. `get_cna_regions`', or None for every region.
+        `data/hg38.chrom.sizes`.
     Returns: the axis.
-    Raises: `ValueError` where `regions` is empty.
     """
-    axis = GenomeAxis(region_bed, chrom_sizes)
-    if regions is None:
-        return axis
-    if regions.empty:
-        raise ValueError("no region to draw")
-    bed = regions[["#CHR", "START", "END", "NAME"]].to_csv(sep="\t", header=False, index=False)
-    return GenomeAxis(io.StringIO(bed), chrom_sizes)
-
-
-def get_cna_regions(profiles: dict[str, pd.DataFrame | None], genome_axis: GenomeAxis, neutral: str) -> pd.DataFrame:
-    """Get `genome_axis`' regions of each chromosome where a drawn clone (`get_profile_clones`) of any profile holds a
-    CNA on any of its regions: a state other than `neutral` in a state table, other than `NEUTRAL_COPY_STATE` in
-    integer copies (`get_copy_states`). A chromosome is kept whole, every arm, or left out.
-
-    Args: `profiles` title -> `CHR`, `START`, `END` and either `clone<k> A`, `clone<k> B` or `clone<k>` state, or None
-        for none; `genome_axis` cnplot's axis (`get_genome_axis`); `neutral` a state table's neutral state, e.g. `NEU`.
-    Returns: the regions, `genome_axis.regions`' rows, in its order.
-    """
-    altered = []
-    for profile in profiles.values():
-        if profile is None:
-            continue
-        segments = get_cnplot_segments(profile, genome_axis)
-        integer = any(c.endswith(" A") for c in segments.columns)
-        states = get_copy_states(segments) if integer else segments
-        clones = [f"clone{k}" for k in get_profile_clones(states, integer)]
-        cna = ~states[clones].isin([NEUTRAL_COPY_STATE if integer else neutral]).all(axis=1)
-        altered.append(states.loc[cna, ["#CHR", "START", "END"]])
-    regions = genome_axis.regions.reset_index(drop=True)
-    if not altered:
-        return regions.iloc[:0]
-    pieces = pd.concat(altered, ignore_index=True).merge(
-        regions.reset_index(names="region"), on="#CHR", suffixes=("", "_region")
-    )
-    held = pieces.loc[(pieces["START"] < pieces["END_region"]) & (pieces["END"] > pieces["START_region"]), "region"]
-    return regions[regions["#CHR"].isin(regions.loc[regions.index.isin(held), "#CHR"])]
+    return GenomeAxis(region_bed, chrom_sizes)
 
 
 def get_cnplot_bins(table: pd.DataFrame) -> pd.DataFrame:

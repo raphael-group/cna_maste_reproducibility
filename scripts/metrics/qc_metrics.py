@@ -1,6 +1,5 @@
 """A run's quality without a truth: its genome by CNA state, and its calls on the spots.
 
-- `get_region_weights` -- each segment's bases inside the regions;
 - `compute_genome_composition` -- per clone, the share of the genome, or of the genes, in each CNA state and
   `uncalled`;
 - `get_coverage` -- each run's called spots, normal and tumor, and its spot coverage rate;
@@ -36,7 +35,6 @@ import pandas as pd
 from scripts.cnamaste_port.config import start_time
 from scripts.cnamaste_port.logger import get_logger
 from scripts.metrics.cna_states import get_cna_states, get_uncalled
-from scripts.metrics.gene_level import get_chromosomes
 from scripts.metrics.read_method_input import (
     EPITHELIAL,
     LOW_CONFIDENCE,
@@ -49,25 +47,6 @@ logger = get_logger("qc_metrics", start_time=start_time)
 
 COMPOSITION_COLUMNS = ("clone", "#spots", *get_cna_states(), get_uncalled())
 """A composition row's columns: the clone, its spots, a share per CNA state and `uncalled`."""
-
-
-def get_region_weights(profile: pd.DataFrame, regions: pd.DataFrame) -> np.ndarray:
-    """Get each segment's bases inside the regions.
-
-    Args:
-        profile: `CHR`, `START`, `END` per segment.
-        regions: `CHR`, `START`, `END` per region, disjoint.
-
-    Returns:
-        The bases per segment.
-    """
-    chrom, r_chrom = get_chromosomes(profile["CHR"]), get_chromosomes(regions["CHR"])
-    lo, hi = profile["START"].to_numpy(dtype=float), profile["END"].to_numpy(dtype=float)
-    weights = np.zeros(len(profile))
-    for c, start, end in zip(r_chrom, regions["START"].to_numpy(), regions["END"].to_numpy(), strict=True):
-        on = chrom == c
-        weights[on] += np.clip(np.minimum(hi[on], end) - np.maximum(lo[on], start), 0, None)
-    return weights
 
 
 def compute_genome_composition(

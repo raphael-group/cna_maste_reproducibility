@@ -20,7 +20,7 @@ from scripts.metrics.cna_states import (
     get_uncalled,
 )
 from scripts.metrics.gene_level import get_gene_states, get_interval_fields
-from scripts.metrics.qc_metrics import compute_genome_composition, get_region_weights
+from scripts.metrics.qc_metrics import compute_genome_composition
 from scripts.metrics.read_method_input import (
     BinCounts,
     MethodInput,
@@ -161,16 +161,13 @@ def test_runs_compare_at_the_finest_field_both_give() -> None:
 
 
 def test_genome_composition_shares_sum_to_one() -> None:
-    """Regions of 300 bases; segments of 100 neu, 50 del outside them and 100 amp in clone 1 inside: per clone, shares
-    of 300 summing to 1 with `uncalled`; `all` weighs clone 0 by 3 spots and clone 1 by 1; at genes, 1 per gene, g1
-    `neu`, g2 and g3 `uncalled`."""
-    regions = pd.DataFrame({"CHR": ["1", "2"], "START": [0, 0], "END": [200, 100]})
+    """Segments of 100 neu, 100 amp in clone 1 and 0 del bases, of 300: per clone, shares of 300 summing to 1 with
+    `uncalled`; `all` weighs clone 0 by 3 spots and clone 1 by 1; at genes, 1 per gene, g1 `neu`, g2 and g3
+    `uncalled`."""
     profile = pd.DataFrame({"CHR": [1, 1, 3], "START": [0, 100, 0], "END": [100, 200, 50]})
     states = np.array([["neu", "neu"], ["neu", "amp"], ["del", "del"]])
-    weights = get_region_weights(profile, regions)
-    assert weights.tolist() == [100, 100, 0]
 
-    table = compute_genome_composition(states, weights, 300.0, pd.Series([0, 0, 0, 1]))
+    table = compute_genome_composition(states, np.array([100.0, 100.0, 0.0]), 300.0, pd.Series([0, 0, 0, 1]))
     assert table["clone"].tolist() == ["clone0", "clone1", "all"]
     assert table[["neu", "amp", "uncalled"]].round(6).to_numpy().tolist() == [
         [round(2 / 3, 6), 0.0, round(1 / 3, 6)],

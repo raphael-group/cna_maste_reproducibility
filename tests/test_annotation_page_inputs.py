@@ -197,44 +197,6 @@ def test_calicost_table_is_the_first_holding_every_labelled_clone(tmp_path: Path
     assert get_calicost_ploidy(tmp_path, fallbacks=()) == "unconstrained"
 
 
-def test_chromosomes_without_a_cna_are_left_out(tmp_path: Path) -> None:
-    """A chromosome is drawn whole where a drawn clone of any profile holds a CNA on either arm: chr1's only drawn CNA
-    is an integer (2,1) on chr1p, so chr1q is drawn too; chr2 holds a state table's AMP and an integer (2,0); chr3's
-    only CNA is a state table's clone 0, the normal clone, not drawn, so chr3 is left out."""
-    pytest.importorskip("cnplot", reason="cnplot is in the analysis environment: uv sync (pyproject.toml)")
-    from scripts.plots.layout import get_cna_regions, get_cnplot_segments, get_genome_axis
-
-    (tmp_path / "regions.bed").write_text(
-        "chr1\t0\t100\tchr1p\nchr1\t150\t300\tchr1q\nchr2\t0\t100\tchr2p\nchr2\t150\t300\tchr2q\n"
-        "chr3\t0\t100\tchr3p\nchr3\t150\t300\tchr3q\n"
-    )
-    (tmp_path / "sizes").write_text("chr1\t300\nchr2\t300\nchr3\t300\n")
-    bed, sizes = str(tmp_path / "regions.bed"), str(tmp_path / "sizes")
-    states = pd.DataFrame(
-        {
-            "CHR": [1, 2, 3],
-            "START": [150, 20, 20],
-            "END": [280, 80, 80],
-            "clone0": ["DEL", "NEU", "DEL"],
-            "clone1": ["NEU", "AMP", "NEU"],
-        }
-    )
-    ones = [1, 1, 1]
-    copies = pd.DataFrame(
-        {"CHR": [1, 1, 2], "START": [20, 150, 150], "END": [100, 300, 300], "clone0 A": ones, "clone0 B": ones}
-    ).assign(**{"clone1 A": [2, 1, 2], "clone1 B": [1, 1, 0]})
-
-    regions = get_cna_regions({"states": states, "copies": copies, "none": None}, get_genome_axis(bed, sizes), "NEU")
-    axis = get_genome_axis(bed, sizes, regions)
-
-    assert regions["NAME"].tolist() == ["chr1p", "chr1q", "chr2p", "chr2q"]
-    assert axis.xlab_chrs == ["chr1", "chr2"]
-    assert get_cnplot_segments(states, axis)[["#CHR", "START", "END"]].to_numpy().tolist() == [
-        ["chr1", 150, 280],
-        ["chr2", 20, 80],
-    ]
-
-
 def test_figures_name_a_run_by_its_method_side_and_setting_alone() -> None:
     """A figure names a run by its method, its bins' side and its `msu<k>`: a cnamaste run's id in its key is left
     out, and a CalicoST sweep run keeps its min-snp-umi."""

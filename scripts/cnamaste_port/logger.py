@@ -1,5 +1,6 @@
 """Ported from cna_maste `python/cnamaste/logger.py` at 42b96ff (2026-11-01):
-the definitions this repository's analysis reaches, verbatim, with their imports pointed at `scripts.cnamaste_port`.
+the definitions this repository's analysis reaches, verbatim less the methods it never calls, with their imports
+pointed at `scripts.cnamaste_port`.
 """
 
 import logging
@@ -11,14 +12,6 @@ import types
 # 1. Create a custom Logger class that shares state across all instances
 class SharedStateLogger(logging.Logger):
     _shared_runtime_phase = None
-
-    @property
-    def runtime_phase(self):
-        return SharedStateLogger._shared_runtime_phase
-
-    @runtime_phase.setter
-    def runtime_phase(self, value):
-        SharedStateLogger._shared_runtime_phase = value
 
 
 logging.setLoggerClass(SharedStateLogger)

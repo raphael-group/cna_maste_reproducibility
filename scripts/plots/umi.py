@@ -74,22 +74,6 @@ HISTOGRAM_HEIGHT = 2.0
 """Inches: a histogram's axes."""
 
 
-BAR_SLOT = 0.75
-"""Inches of axes per bar on a page of its own, room for its two-line label."""
-
-
-BAR_WIDTH = 0.6
-"""A bar's width, in bar slots."""
-
-
-REFERENCE_ROOM = 0.7
-"""Inches right of the axes for the reference line's label."""
-
-
-TICK_ROOM = 0.6
-"""Inches under the axes for a run's name, three lines: method, resolution, label (`get_tick`)."""
-
-
 COMPARISON_HEADROOM = 1.6
 """A comparison histogram's y axis top, over its tallest bar: room for its key above the bars."""
 

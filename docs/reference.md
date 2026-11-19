@@ -55,8 +55,8 @@ are in [celltyping.md](celltyping.md).
 
 > [!IMPORTANT]
 > - cnamaste runs the method alone: the analysis imports no cnamaste. What it takes from cnamaste, its readers, figure
->   style and page layout, is ported in `scripts/cnamaste_port/`, verbatim from cna_maste at `42b96ff`
->   (`tests/test_no_cnamaste_imports.py` checks).
+>   style and page layout, is ported in `scripts/cnamaste_port/`, verbatim from cna_maste at `42b96ff` less the methods
+>   the analysis never calls (`tests/test_no_cnamaste_imports.py` checks).
 > - cnamaste's repository is private: cloning it needs read access and a git holding your GitHub credentials. On macOS
 >   the system git (`/usr/bin/git`) reads them from the keychain; conda-forge's git has no credential helper set.
 > - The method runs need Linux x86_64: bioconda builds `eagle2` (UGP's phaser) and `r-numbat` for `linux-64` and
@@ -686,7 +686,7 @@ with 0.02 in of white round it (`plots.pages.SAVE_OPTIONS`): a paper figure's pa
 | Module | Holds |
 |---|---|
 | `scripts/analysis/` | The analysis step: `options`, `simulation`, `real_data`, `tables`, `figures`. |
-| `scripts/cnamaste_port/` | What the analysis takes from cnamaste: each definition it reaches, verbatim from cna_maste at `42b96ff` in cnamaste's module layout (`cnamaste.x` is `scripts.cnamaste_port.x`), each module headed by its source; `figure_style.style` returns the shipped `DEFAULT`, which cna_maste's `pyproject.toml` states. |
+| `scripts/cnamaste_port/` | What the analysis takes from cnamaste: each definition it reaches, verbatim from cna_maste at `42b96ff` less the methods it never calls, in cnamaste's module layout (`cnamaste.x` is `scripts.cnamaste_port.x`), each module headed by its source; `figure_style.style` returns the shipped `DEFAULT`, which cna_maste's `pyproject.toml` states. |
 | `scripts/metrics/read_method_input.py` | The readers: each method's run, the spots, their cell types, and UGP's counts per bin and spot. |
 | `scripts/metrics/cna_states.py` | The CNA states, and each method's fields per segment and clone. |
 | `scripts/metrics/gene_level.py`, `segment_level.py` | The genes inside the region bed and the runs' joint segments, and each run's profile on them. |
