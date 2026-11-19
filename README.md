@@ -1,5 +1,6 @@
 # cna_maste_reproducibility
 
+[![CI](https://github.com/raphael-group/cna_maste_reproducibility/actions/workflows/ci.yml/badge.svg)](https://github.com/raphael-group/cna_maste_reproducibility/actions/workflows/ci.yml)
 ![Status](https://img.shields.io/badge/status-in%20development-yellow)
 ![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)
 

@@ -722,3 +722,8 @@ The code is formatted with ruff (`ruff.toml`) and snakefmt, both at 120 columns:
 uvx ruff@0.16.8 format . && uvx ruff@0.16.8 check .
 uvx snakefmt@2.1.0 --line-length 120 run_cna_maste_reproducibility.smk
 ```
+
+`.github/workflows/ci.yml` runs on every pull request and every push to `main`: the format and lint checks above (with
+`--check`), the workflow parsed with the shipped config (`snakemake --list-rules`), and `pytest` in an environment
+`uv sync --locked` builds from `uv.lock`. The method runs and the analysis on data need the inputs and a Linux server,
+so CI does not run them.

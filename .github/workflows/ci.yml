@@ -1,0 +1,53 @@
+# Lint, workflow parse and tests on every push to main and every pull request; the tests in ANALYSIS_ENV as uv.lock
+# pins it. The methods and the analysis on data need the inputs and a Linux server, so they do not run here.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.10"
+          python-version: "3.12"
+      - name: ruff format
+        run: uvx ruff@0.16.8 format --check .
+      - name: ruff check
+        run: uvx ruff@0.16.8 check .
+      - name: snakefmt
+        run: uvx snakefmt@2.1.0 --line-length 120 --check run_cna_maste_reproducibility.smk
+      - name: Snakefile parses with the shipped config
+        run: uvx --from snakemake==9.27.1 snakemake -s run_cna_maste_reproducibility.smk --list-rules
+
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: "0.12.10"
+          python-version: "3.12"
+      - name: Analysis environment
+        run: uv sync --locked
+      - name: pytest
+        run: uv run --locked pytest
