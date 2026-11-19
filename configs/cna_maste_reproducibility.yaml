@@ -96,7 +96,7 @@ REPOS:
   CNAMASTE_REPO:
     # NB: private; cloning needs read access and a git holding GitHub credentials
     url: https://github.com/michaelJwilson/cna_maste.git
-    rev: cleanup3
+    rev: ddc060bd4fb962f120a58c0d7220209f178ce9f3  # NB: cleanup3
   UGP_REPO:
     url: https://github.com/raphael-group/Universal-Genotyping-Pipeline
     rev: c5c0b9b9ccb84268f4d29f9840dd91b71d793d7d

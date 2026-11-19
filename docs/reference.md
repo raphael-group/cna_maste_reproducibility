@@ -48,7 +48,7 @@ are in [celltyping.md](celltyping.md).
 | `CALICOST_ENV` | `configs/envs/calicost.yaml` | CalicoST, installed editable from `CALICOST_REPO`; the simulations' 10x matrices. |
 | `NUMBAT_ENV` | `configs/envs/numbat.yaml` | Numbat, bioconda `r-numbat` 1.5.2 (CRAN). |
 | `CLONALSCOPE_ENV` | `configs/envs/clonalscope.yaml` | Clonalscope, installed from `CLONALSCOPE_REPO`. |
-| `CNAMASTE_ENV` | `uv:CNAMASTE_REPO` | cnamaste at `cleanup3`: `run_cnamaste`, `run_cnamaste_plot`, `run_sim_qa`. |
+| `CNAMASTE_ENV` | `uv:CNAMASTE_REPO` | cnamaste at `ddc060b` (`cleanup3`): `run_cnamaste`, `run_cnamaste_plot`, `run_sim_qa`. |
 | `ANALYSIS_ENV` | `uv:REPO`: this repository's `pyproject.toml` and `uv.lock` | The analysis step and the tests: numpy, pandas, scipy, matplotlib, anndata, polars, numba, seaborn, scikit-learn at the versions of cna_maste's environment at `42b96ff`, and [cnplot](https://github.com/raphael-group/cnplot) at `cc5bbd7`; no cnamaste. |
 | `UNIVERSAL_GENOTYPING_PIPELINE_ENV` | `{UGP_REPO}/environment.yaml` | Universal-Genotyping-Pipeline (UGP) on the ovarian sample. |
 | `CELLTYPING_ENV` | `configs/envs/celltyping.yaml` | The cell types; `scripts/utils/format_bb.py` and `aggregate_bb.py`. |
@@ -115,7 +115,7 @@ A missing clone is cloned at its `rev`; an existing one is checked against it an
 | `CALICOST_REPO` | [raphael-group/CalicoST](https://github.com/raphael-group/CalicoST) | `c1abcae3e3657e01e547ee4529e3b9d039221453` (main) |
 | `NUMBAT_REPO` | [kharchenkolab/numbat](https://github.com/kharchenkolab/numbat) | `54d8268f3d14bd6afaa6784eeb839db7479a8947`, the commit setting `Version: 1.5.2`; GitHub has no `v1.5.2` tag |
 | `CLONALSCOPE_REPO` | [seasoncloud/Clonalscope](https://github.com/seasoncloud/Clonalscope) | `07dd0c576b6754d18dda86ec8905d8a9be5e77b0` (main; package version 1.1.0) |
-| `CNAMASTE_REPO` | michaelJwilson/cna_maste (private) | `cleanup3` |
+| `CNAMASTE_REPO` | michaelJwilson/cna_maste (private) | `ddc060bd4fb962f120a58c0d7220209f178ce9f3` (cleanup3) |
 | `UGP_REPO` | [raphael-group/Universal-Genotyping-Pipeline](https://github.com/raphael-group/Universal-Genotyping-Pipeline) | `c5c0b9b9ccb84268f4d29f9840dd91b71d793d7d` |
 
 ### Method parameters
