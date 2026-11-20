@@ -1254,7 +1254,7 @@ rule cnamaste_sim_qa:
 
 
 ##################################################
-# Run: cnamaste on the ovarian sample, cnamaste's config.yaml at cleanup3
+# Run: cnamaste on the ovarian sample, cnamaste's config.yaml at v0.1.0
 
 
 rule cnamaste_ovarian:

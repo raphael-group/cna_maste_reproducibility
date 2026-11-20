@@ -94,9 +94,8 @@ REPOS:
     url: https://github.com/seasoncloud/Clonalscope
     rev: 07dd0c576b6754d18dda86ec8905d8a9be5e77b0
   CNAMASTE_REPO:
-    # NB: private; cloning needs read access and a git holding GitHub credentials
-    url: https://github.com/michaelJwilson/cna_maste.git
-    rev: ddc060bd4fb962f120a58c0d7220209f178ce9f3  # NB: cleanup3
+    url: https://github.com/raphael-group/cna_maste
+    rev: 1ab2ee5bf9b98b76fc97d086c665cece9a56ad23  # NB: v0.1.0
   UGP_REPO:
     url: https://github.com/raphael-group/Universal-Genotyping-Pipeline
     rev: c5c0b9b9ccb84268f4d29f9840dd91b71d793d7d
@@ -128,11 +127,11 @@ CELLTYPING_MARKERS_URL: https://omnipathdb.org/annotations?resources=PanglaoDB&f
 ##################################################
 # Fixed: cnamaste's parameters per case. run_cnamaste reads python/cnamaste/config/config_defaults.yaml, then `config`
 # below, then the paths and references the pipeline adds; a key left out keeps cnamaste's default.
-# zenodo_sim: cnamaste's batch_zenodo_run.sh at cleanup3, one run_cnamaste per simulation, solver and seed, with its
+# zenodo_sim: cnamaste's batch_zenodo_run.sh at v0.1.0, one run_cnamaste per simulation, solver and seed, with its
 #   overrides: hmrf.random_seed, hmrf.label_solver, hmm.initializer and ab_decode.decoder (lattice -> hmm_ab, calicost
 #   -> calicost); then run_cnamaste_plot of each run, and run_sim_qa of qa_solver against CalicoST and each other
 #   solver (--one_shot --overwrite, --calicost_ploidy).
-# ovarian: config.yaml of cnamaste at cleanup3 (its Visium HD run), less its paths and references; hmrf.label_solver
+# ovarian: config.yaml of cnamaste at v0.1.0 (its Visium HD run), less its paths and references; hmrf.label_solver
 #   expansion (cnamaste's alpha expansion), hmrf.lattice_type square for Visium HD's bins.
 CNAMASTE:
   zenodo_sim:
@@ -147,7 +146,7 @@ CNAMASTE:
     calicost_ploidy: diploid
     # NB: every thread pool of a run, BLAS's included; the calicost initializer's start depends on BLAS's count
     threads: 4
-    # NB: zenodo_sim_config.yaml of cnamaste at cleanup3, less its paths and references
+    # NB: zenodo_sim_config.yaml of cnamaste at v0.1.0, less its paths and references
     config:
       hmrf:
         lattice_type: triangular
@@ -157,7 +156,7 @@ CNAMASTE:
         mstep_callback_cadence: 2
   ovarian:
     threads: 16
-    # NB: config.yaml of cnamaste at cleanup3, less its paths and references
+    # NB: config.yaml of cnamaste at v0.1.0, less its paths and references
     config:
       quality:
         phasing_min_snp_umis: 150

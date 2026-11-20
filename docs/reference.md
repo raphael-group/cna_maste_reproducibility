@@ -48,7 +48,7 @@ are in [celltyping.md](celltyping.md).
 | `CALICOST_ENV` | `configs/envs/calicost.yaml` | CalicoST, installed editable from `CALICOST_REPO`; the simulations' 10x matrices. |
 | `NUMBAT_ENV` | `configs/envs/numbat.yaml` | Numbat, bioconda `r-numbat` 1.5.2 (CRAN). |
 | `CLONALSCOPE_ENV` | `configs/envs/clonalscope.yaml` | Clonalscope, installed from `CLONALSCOPE_REPO`. |
-| `CNAMASTE_ENV` | `uv:CNAMASTE_REPO` | cnamaste at `ddc060b` (`cleanup3`): `run_cnamaste`, `run_cnamaste_plot`, `run_sim_qa`. |
+| `CNAMASTE_ENV` | `uv:CNAMASTE_REPO` | cnamaste `v0.1.0`: `run_cnamaste`, `run_cnamaste_plot`, `run_sim_qa`. |
 | `ANALYSIS_ENV` | `uv:REPO`: this repository's `pyproject.toml` and `uv.lock` | The analysis step and the tests: numpy, pandas, scipy, matplotlib, anndata, polars, numba, seaborn, scikit-learn at the versions of cna_maste's environment at `42b96ff`, and [cnplot](https://github.com/raphael-group/cnplot) at `cc5bbd7`; no cnamaste. |
 | `UNIVERSAL_GENOTYPING_PIPELINE_ENV` | `{UGP_REPO}/environment.yaml` | Universal-Genotyping-Pipeline (UGP) on the ovarian sample. |
 | `CELLTYPING_ENV` | `configs/envs/celltyping.yaml` | The cell types; `scripts/utils/format_bb.py` and `aggregate_bb.py`. |
@@ -56,9 +56,8 @@ are in [celltyping.md](celltyping.md).
 > [!IMPORTANT]
 > - cnamaste runs the method alone: the analysis imports no cnamaste. What it takes from cnamaste, its readers, figure
 >   style and page layout, is ported in `scripts/cnamaste_port/`, verbatim from cna_maste at `42b96ff` less the methods
->   the analysis never calls (`tests/test_no_cnamaste_imports.py` checks).
-> - cnamaste's repository is private: cloning it needs read access and a git holding your GitHub credentials. On macOS
->   the system git (`/usr/bin/git`) reads them from the keychain; conda-forge's git has no credential helper set.
+>   the analysis never calls (`tests/test_no_cnamaste_imports.py` checks). `42b96ff` (2026-11-01) is a commit of
+>   cnamaste's development repository, before its public `v0.1.0`; the public repository's history does not hold it.
 > - The method runs need Linux x86_64: bioconda builds `eagle2` (UGP's phaser) and `r-numbat` for `linux-64` and
 >   `osx-64` alone, and the baseline runs need GNU time and timeout and systemd user scopes with the memory controller
 >   delegated, for their `BASELINE_LIMITS`. The LaTeX tables need `pdflatex` (TeX Live). The README's first commands
@@ -115,7 +114,7 @@ A missing clone is cloned at its `rev`; an existing one is checked against it an
 | `CALICOST_REPO` | [raphael-group/CalicoST](https://github.com/raphael-group/CalicoST) | `c1abcae3e3657e01e547ee4529e3b9d039221453` (main) |
 | `NUMBAT_REPO` | [kharchenkolab/numbat](https://github.com/kharchenkolab/numbat) | `54d8268f3d14bd6afaa6784eeb839db7479a8947`, the commit setting `Version: 1.5.2`; GitHub has no `v1.5.2` tag |
 | `CLONALSCOPE_REPO` | [seasoncloud/Clonalscope](https://github.com/seasoncloud/Clonalscope) | `07dd0c576b6754d18dda86ec8905d8a9be5e77b0` (main; package version 1.1.0) |
-| `CNAMASTE_REPO` | michaelJwilson/cna_maste (private) | `ddc060bd4fb962f120a58c0d7220209f178ce9f3` (cleanup3) |
+| `CNAMASTE_REPO` | [raphael-group/cna_maste](https://github.com/raphael-group/cna_maste) | `1ab2ee5bf9b98b76fc97d086c665cece9a56ad23` (v0.1.0) |
 | `UGP_REPO` | [raphael-group/Universal-Genotyping-Pipeline](https://github.com/raphael-group/Universal-Genotyping-Pipeline) | `c5c0b9b9ccb84268f4d29f9840dd91b71d793d7d` |
 
 ### Method parameters
@@ -128,7 +127,7 @@ A key left out keeps the method's default; each config's header cites the source
 | `configs/baselines/clonalscope.yaml` | `calicost-sim`, `ovarian` | `run_label`, `ploidy`; ovarian `bins_um`, the bin sides run. The method's arguments are fixed in `scripts/baselines/clonalscope/tutorial.R`. |
 | `configs/baselines/calicost.yaml` | `calicost-sim` | `sims` (`all`, every `numcnas*` folder of the deposit, or a list), `rects` (the initializations run at once per simulation, one core each). |
 | | `ovarian` | `inputs` (bin side), `runs` (tag: its input and the `configuration_cna` keys it sets; `msu<N>` sets `min_snpumi_perspot = N`), `configuration_cna` (CalicoST's default). |
-| `CNAMASTE` | `zenodo_sim` | `solvers` (`<label_solver>-<initializer>-<decoder>`), `random_seeds`, `qa_solver`, `calicost_ploidy`, `threads`, `config` (cnamaste's `zenodo_sim_config.yaml` at `cleanup3`, less its paths and references). |
+| `CNAMASTE` | `zenodo_sim` | `solvers` (`<label_solver>-<initializer>-<decoder>`), `random_seeds`, `qa_solver`, `calicost_ploidy`, `threads`, `config` (cnamaste's `zenodo_sim_config.yaml` at `v0.1.0`, less its paths and references). |
 | | `ovarian` | `threads`, `config` (`hmrf.lattice_type: square`, which has no default). |
 
 ### Analysis
@@ -259,8 +258,8 @@ deposit's CalicoST, Numbat and STARCH labels and profiles).
 | `cnamaste_sim` | `run_cnamaste` per simulation, solver and seed, as cnamaste's `batch_zenodo_run.sh` runs each job: `-o hmrf.random_seed`, `hmrf.label_solver`, `hmm.initializer` and `ab_decode.decoder` (`lattice` -> `hmm_ab`, `calicost` -> `calicost`), into `nomixing_cnamaste_related/<sim>/<solver>/run_<id>/`; a run that stops with an error leaves an empty `run_id.seed<seed>.txt` and `FAILED rc=<rc>` in its log, and is skipped by `cnamaste_sim_plot`, left out by `run_sim_qa` and left unscored. Every thread pool of a run, OpenMP, Numba, OpenBLAS and MKL, is set to `threads`. |
 | `cnamaste_sim_plot` | `run_cnamaste_plot` of each run. |
 | `cnamaste_sim_qa` | `run_sim_qa` of `qa_solver` against CalicoST and each other solver (`--one_shot --overwrite --calicost_ploidy`). |
-| `cnamaste_ovarian`, `cnamaste_ovarian_plot` | `run_cnamaste` on the sample with cnamaste's `config.yaml` at cleanup3, less its paths and references (`hmrf.label_solver: expansion`, alpha expansion), then `run_cnamaste_plot`. A failed run fails its rule: the ovarian figures and tables need its outputs. |
-| `cnamaste_ovarian_binned_data` | `scripts/baselines/cnamaste/write_binned_data.py`: the run's `binned_data.npz`, which the cnamaste page reads and `cleanup3` no longer writes. |
+| `cnamaste_ovarian`, `cnamaste_ovarian_plot` | `run_cnamaste` on the sample with cnamaste's `config.yaml` at `v0.1.0`, less its paths and references (`hmrf.label_solver: expansion`, alpha expansion), then `run_cnamaste_plot`. A failed run fails its rule: the ovarian figures and tables need its outputs. |
+| `cnamaste_ovarian_binned_data` | `scripts/baselines/cnamaste/write_binned_data.py`: the run's `binned_data.npz`, which the cnamaste page reads and cnamaste `v0.1.0` does not write. |
 
 > [!NOTE]
 > A solver with the `calicost` initializer starts its HMM from CalicoST's `initialization_by_gmm`, a scikit-learn
@@ -676,7 +675,7 @@ with 0.02 in of white round it (`plots.pages.SAVE_OPTIONS`): a paper figure's pa
 | `suppl-fig-cna-jaccard` | Each run's state Jaccard index against the reference at its `level`, a row per reference state, a column per run state (`plots.run_comparison.plot_cna_jaccard`). |
 | `appendix-P<k>` | The simulations' metrics at the genes, as combined.pdf's page 1. |
 | `suppl-fig-zenodo-sim-runtime` | The simulations' runtime and memory per method, log axes. |
-| `suppl-fig-zenodo-sim-ablation` | Where the table holds cnamaste's solvers, `run_sim_qa`'s solver comparison (`qa.plot.plot_validation`, `ddc060b`): (a) CNA sensitivity, (b) 1 - normal specificity on a log axis, a run at specificity 1 drawn at a floor ticked 0.00 (`plots.simulation.get_complement`), (c) N-CNA recall, (d) clone ARI of the integer clones, a box per class and solver (`plots.simulation.plot_solver_ablation`). |
+| `suppl-fig-zenodo-sim-ablation` | Where the table holds cnamaste's solvers, `run_sim_qa`'s solver comparison (`qa.plot.plot_validation`, `v0.1.0`): (a) CNA sensitivity, (b) 1 - normal specificity on a log axis, a run at specificity 1 drawn at a floor ticked 0.00 (`plots.simulation.get_complement`), (c) N-CNA recall, (d) clone ARI of the integer clones, a box per class and solver (`plots.simulation.plot_solver_ablation`). |
 | `appendix-P<k>` | The panel names. |
 
 ---

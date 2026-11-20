@@ -14,8 +14,8 @@ per method side by side, its samples overlaid (`draw_groups`), each method in it
 runtime and memory on log axes ticked at 1, 2 and 5 per decade; the solver page's normal specificity as
 1 - specificity on a log axis, a run at specificity 1 drawn at a floor ticked 0.00 (`get_complement`).
 The methods are `style.METHOD_COLOURS`' alone; a cnamaste solver's run beside the main one, its rows' `solver` set, is
-drawn on its own page with the main solver (`plot_solver_ablation`), as cnamaste `cleanup3`'s `run_sim_qa` draws its
-solvers (`qa.plot.plot_validation`, `ddc060b`), one page for all of them.
+drawn on its own page with the main solver (`plot_solver_ablation`), as cnamaste `v0.1.0`'s `run_sim_qa` draws its
+solvers (`qa.plot.plot_validation`), one page for all of them.
 """
 
 from __future__ import annotations
@@ -95,7 +95,7 @@ SOLVER_PANELS = (
     ("exact_altered", r"$\mathbb{N}$-CNA recall"),
     ("clone_ari", "Clone ARI"),
 )
-"""The solver page's panels, row by row, as `(column, label)`: cnamaste `cleanup3`'s `qa.plot.PANELS` (`ddc060b`),
+"""The solver page's panels, row by row, as `(column, label)`: cnamaste `v0.1.0`'s `qa.plot.PANELS`,
 its normal specificity as 1 - specificity on a log axis, its N-clone ARI the clone ARI of the integer clones,
 `clone_labels_int.tsv`, every cnamaste run's."""
 
