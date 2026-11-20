@@ -1,0 +1,23 @@
+# Clonalscope's parameters per case. Its method arguments are fixed in scripts/baselines/clonalscope/tutorial.R, the
+# Visium tumor_spots_tutorial call for call; paths come from configs/cna_maste_reproducibility.yaml.
+#
+# Runpeng Luo (2026-11-08)
+#
+# Tutorial (no paired DNA), branch identify_normal_cells_noWGS:
+#   https://github.com/seasoncloud/Clonalscope/blob/26f4f37798f8bc4a84f7dd42ce014a4457a18d86/samples/V11Y04-378-A1/tumor_spots_tutorial/README.md
+# Non-default arguments of tutorial.R, as the tutorial sets them (defaults read with formals() from 1.1.0):
+#   FindNormalReference(method = "pca")   default "marker"  'FindNormalReference(counts=mtx, gene_symbols=gene_symbols,method="pca")'
+#   seg_table_filtered: chromosome arms from data-raw/cytoarm_table_hg38.txt, states = 1 (required input)
+#   RunCovCluster(alpha = 5, beta = 5)    default 2, 2      "bed=bed,alpha=5,beta=5,"
+#   RunCovCluster(include = "all")        default "tumor"   "var_pt=0.99, var_pt_ctrl=0.99, include='all',"
+#   RunCovCluster(est_cap = 2)            default 3         "breaks=50, prep_mode = 'intersect', est_cap = 2,"
+# At default: RunCovCluster var_pt 0.99, var_pt_ctrl 0.99, alpha_source "all", ctrl_region NULL, breaks 50,
+#   prep_mode "intersect", clust_mode "all", seed 200; MalignantAssignment cutoff 0.5. One thread per sample.
+calicost-sim:
+  run_label: visium_tutorial
+  ploidy: 2
+ovarian:
+  # NB: bin sides run; 16 is Space Ranger's own 16um matrix, a coarser side that matrix summed (common/aggregate_10x_matrix.R)
+  bins_um: [32]
+  run_label: visium_tutorial
+  ploidy: 2

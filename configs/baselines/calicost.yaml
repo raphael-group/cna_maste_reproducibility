@@ -1,0 +1,61 @@
+# CalicoST's parameters per case; paths come from configs/cna_maste_reproducibility.yaml.
+#
+# Runpeng Luo (2026-11-08)
+#
+# calicost-sim: the deposit's own configfile0..4 per simulation, only input, output and resource paths remapped
+#   (scripts/baselines/calicost/repro.sh), https://doi.org/10.5281/zenodo.14175627.
+# ovarian: CalicoST's default configuration_cna, then each run's own keys (scripts/baselines/calicost/ovarian_config.py);
+#   a key left out takes the arg_parse.py default,
+#   https://github.com/raphael-group/CalicoST/blob/c1abcae3e3657e01e547ee4529e3b9d039221453/src/calicost/arg_parse.py
+#   `{sample}` in a name is OVARIAN_SAMPLE_ID.
+calicost-sim:
+  sims: all            # NB: "all" = every numcnas* folder of the deposit, or a list
+  rects: [0, 1, 2, 3, 4]  # NB: a simulation's job runs its rects at once, one core each
+ovarian:
+  inputs:
+    "{sample}_016um": {bin_um: 16}
+  # NB: tag -> its input and the configuration_cna keys it sets; min_snpumi_perspot defaults to 50
+  runs:
+    "{sample}_016um_msu50": {input: "{sample}_016um"}
+    "{sample}_016um_msu25": {input: "{sample}_016um", min_snpumi_perspot: 25}
+    "{sample}_016um_msu20": {input: "{sample}_016um", min_snpumi_perspot: 20}
+    "{sample}_016um_msu15": {input: "{sample}_016um", min_snpumi_perspot: 15}
+    "{sample}_016um_msu10": {input: "{sample}_016um", min_snpumi_perspot: 10}
+  configuration_cna:
+    normalidx_file: None
+    tumorprop_file: None
+    supervision_clone_file: None
+    secondary_min_umi: 300
+    bafonly: False
+    nu: 1.0
+    logphase_shift: -2.0
+    npart_phasing: 3
+    n_clones: 3
+    n_clones_rdr: 2
+    min_spots_per_clone: 100
+    min_avgumi_per_clone: 10
+    maxspots_pooling: 7
+    tumorprop_threshold: 0.5
+    max_iter_outer: 20
+    nodepotential: weighted_sum
+    initialization_method: rectangle
+    num_hmrf_initialization_start: 0
+    num_hmrf_initialization_end: 1
+    spatial_weight: 1.0
+    construct_adjacency_method: hexagon
+    construct_adjacency_w: 1.0
+    n_states: 7
+    params: smp
+    t: 1-1e-5
+    t_phaseing: 0.9999
+    fix_NB_dispersion: False
+    shared_NB_dispersion: True
+    fix_BB_dispersion: False
+    shared_BB_dispersion: True
+    max_iter: 30
+    tol: 0.0001
+    gmm_random_state: 0
+    np_threshold: 1.0
+    np_eventminlen: 10
+    nonbalance_bafdist: 1.0
+    nondiploid_rdrdist: 10.0

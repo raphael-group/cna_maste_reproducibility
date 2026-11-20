@@ -1,0 +1,15 @@
+# Cell-typing env for the benchmark (CELLTYPING_ENV of configs/cna_maste_reproducibility.yaml): scripts/celltyping/.
+name: celltyping
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11.17
+  - scanpy=1.11.5
+  - decoupler-py=2.1.6
+  - anndata=0.12.19
+  - pandas=2.3.3
+  - numpy=2.4.6
+  - matplotlib-base=3.11.2
+  - pyarrow=25.0.0
+  - h5py=3.16.0

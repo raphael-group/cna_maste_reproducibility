@@ -1,0 +1,34 @@
+workflow_mode: "single_cell_genotyping"
+assay_types: ["VISIUM3prime"]
+
+sample_file: /path/to/sample.json
+
+##################################################
+# Reference
+reference_version: "hg38"
+reference: /n/fs/ragr-data/copytyping_datasets/refdata-gex-GRCh38-2024-A/fasta/genome.fa
+gtf_file: /n/fs/ragr-data/copytyping_datasets/refdata-gex-GRCh38-2024-A/genes/genes.gtf.gz
+genome_size: /n/fs/ragr-data/copytyping_datasets/refdata-gex-GRCh38-2024-A/fasta/genome.sizes
+region_bed: /n/fs/ragr-research/users/rl6004/Universal-Genotyping-Pipeline/resources/data/hg38.regions.bed
+blacklist_bed: /n/fs/ragr-research/users/rl6004/Universal-Genotyping-Pipeline/resources/data/hg38-blacklist.v2.bed.gz
+gene_blacklist_file: /n/fs/ragr-research/users/rl6004/Universal-Genotyping-Pipeline/resources/data/ig_gene_list.txt
+
+##################################################
+# Genotyping + phasing
+snp_panel: /n/fs/ragr-data/copytyping_datasets/1kGP_3202_hg38/snps.vcf.gz
+phasing_panel: /n/fs/ragr-data/copytyping_datasets/1kGP_3202_hg38/phasing_panel
+gmap_path: /n/fs/ragr-data/copytyping_datasets/bin/Eagle_v2.4.1/tables/genetic_map_hg38_withX.txt.gz
+
+params_genotype_snps:
+  min_dp: 4
+
+##################################################
+# Segmentation
+params_combine_counts:
+  min_snp_reads: [300]
+
+##################################################
+threads:
+  genotype: 8
+  phase: 2
+  pileup: 16

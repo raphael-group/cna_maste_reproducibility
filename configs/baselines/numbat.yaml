@@ -1,0 +1,22 @@
+# Numbat's parameters per case: run_numbat() in scRNA mode (scripts/baselines/numbat/run.R) with numbat::ref_hca and
+# genome = "hg38". A key left out keeps Numbat's default; paths come from configs/cna_maste_reproducibility.yaml.
+#
+# Runpeng Luo (2026-11-08)
+#
+# Non-default: max_entropy = 0.8 (default 0.5), per the spatial vignette,
+#   https://kharchenkolab.github.io/numbat/articles/spatial-rna.html
+#   (raw: https://github.com/kharchenkolab/numbat/blob/b444f3c51f1ed38f400b2b8bc435cd40fabe6f4e/vignettes/spatial-rna.Rmd):
+#   "max_entropy ... should be set to a higher value such as 0.8 (default is 0.5)."
+# Required inputs: lambdas_ref = numbat::ref_hca (https://kharchenkolab.github.io/numbat/articles/numbat.html);
+#   df_allele: simulations, the deposit's numbat_allele_counts.tsv.gz; ovarian, UGP's 16um pileup and Eagle2 phasing
+#   through numbat:::preprocess_allele. ncores is runtime only.
+calicost-sim:
+  run_label: max_entropy_08
+  ncores: 8
+  max_entropy: 0.8
+ovarian:
+  # NB: run_numbat calls stats::hclust on a spot x spot distance, which stops above 65536 items
+  bin_um: 32
+  run_label: max_entropy_08
+  ncores: 12
+  max_entropy: 0.8

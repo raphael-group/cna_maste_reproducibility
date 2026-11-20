@@ -1,0 +1,16 @@
+# Local data, run outputs and environments: tmp/input_data/, tmp/output/, tmp/envs/; dependency checkouts.
+tmp/
+.build/
+
+# Caches.
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.snakemake/
+.DS_Store
+
+# Dev-only notes.
+docs/opt_notes.md
+docs/prep_comparison.md
+docs/figure-rule.md
+docs/click_go.md
