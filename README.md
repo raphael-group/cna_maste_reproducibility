@@ -9,7 +9,7 @@ Code to reproduce the analysis and figures in the manuscript [Inference of allel
 ## Environment
 ```sh
 # NB: requirements: Linux x86_64; conda with mamba; GNU time and timeout, and systemd user scopes with the memory
-#     controller delegated (the baseline runs' limits); pdflatex (TeX Live); read access to the private cna_maste repository
+#     controller delegated (the baseline runs' limits); pdflatex (TeX Live)
 uname -sm  # NB: Linux x86_64
 /usr/bin/time -v true && timeout 1 true
 grep -w memory /sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/cgroup.controllers

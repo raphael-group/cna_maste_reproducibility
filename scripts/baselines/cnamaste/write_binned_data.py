@@ -2,7 +2,7 @@
 
 Runpeng Luo (2026-11-04)
 
-Dependencies: a cnamaste checkout with `cnamaste.io.get_labelled_counts` (e.g. `cleanup3`), numpy, pandas, scipy.
+Dependencies: a cnamaste checkout with `cnamaste.io.get_labelled_counts` (e.g. `v0.1.0`), numpy, pandas, scipy.
 
 Usage:
     uv run --project <cnamaste checkout> python write_binned_data.py <run_dir> <out_npz> [--input_dir DIR]
